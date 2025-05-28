@@ -18,9 +18,9 @@
 <header class="bg-white shadow-md">
 <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
 <a class="text-2xl font-bold text-blue-600" href="index.php">ytid.com</a> <div class="flex items-center space-x-4">
-<a class="text-gray-600 hover:text-blue-600" href="#">YouTube Downloader</a>
-<a class="text-gray-600 hover:text-blue-600" href="#">YouTube To Mp3</a>
-<a class="text-gray-600 hover:text-blue-600" href="#">YouTube To Mp4</a>
+<a class="text-gray-600 hover:text-blue-600" href="index.php">YouTube Downloader</a>
+<a class="text-gray-600 hover:text-blue-600" href="index.php">YouTube To Mp3</a>
+<a class="text-gray-600 hover:text-blue-600" href="index.php">YouTube To Mp4</a>
 <div class="relative">
 <button class="text-gray-600 hover:text-blue-600 flex items-center">
                         English
