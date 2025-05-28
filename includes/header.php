@@ -8,6 +8,7 @@
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="assets/css/style.css"/>
+  <script src="assets/js/script.js" defer></script>
   <style> body { font-family: 'Roboto', sans-serif; } </style>
 </head>
 <body class="bg-blue-50">
