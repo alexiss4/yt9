@@ -189,4 +189,10 @@ $lang = [
     'nav_yt_to_mp3' => 'YouTube To Mp3',
     'nav_yt_to_mp4' => 'YouTube To Mp4',
     'nav_thumb_downloader' => 'Thumbnail Downloader',
+
+    // Index Page Form Section (New Keys from Refactor)
+    'form_section_title' => 'YouTube Video Downloader',
+    'form_section_subtitle' => 'Download YouTube videos to mp3 and mp4 online for free',
+    'form_placeholder_search_or_paste' => 'Search keywords or paste video link here',
+    // 'copyrighted_content_warning' is already defined and used
 ];

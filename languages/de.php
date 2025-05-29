@@ -137,5 +137,32 @@ $lang = [
     'feature_fast_download_mp4_desc' => '[de] Our service quickly processes your video for fast MP4 downloads.',
     'feature_no_registration_mp4_title' => '[de] No Registration Needed',
     'feature_no_registration_mp4_desc' => '[de] Download and convert videos to MP4 without any signup or registration.',
+
+    // YouTube Thumbnail Downloader Page Specific
+    'thumb_max_res' => '[de] Max Resolution',
+    'thumb_sd_res' => '[de] Standard Definition',
+    'thumb_hq_res' => '[de] High Quality',
+    'thumb_mq_res' => '[de] Medium Quality',
+    'thumb_default_res' => '[de] Default Quality',
+    'error_invalid_youtube_url' => '[de] Invalid YouTube URL. Please enter a valid video link.',
+    'error_empty_youtube_url' => '[de] Please enter a YouTube URL.',
+    'yt_thumb_title' => '[de] YouTube Thumbnail Downloader',
+    'yt_thumb_description' => '[de] Download thumbnails from YouTube videos in various resolutions.',
+    'get_thumbnails_button' => '[de] Get Thumbnails',
+    'available_thumbnails_title' => '[de] Available Thumbnails',
+    'thumb_not_available' => '[de] Thumbnail not available at this resolution.',
+    'download_thumb_button' => '[de] Download',
+
+    // Navigation Menu
+    'nav_home' => '[de] YouTube Downloader',
+    'nav_yt_to_mp3' => '[de] YouTube To Mp3',
+    'nav_yt_to_mp4' => '[de] YouTube To Mp4',
+    'nav_thumb_downloader' => '[de] Thumbnail Downloader',
+
+    // Index Page Form Section (New Keys from Refactor)
+    'form_section_title' => '[de] YouTube Video Downloader',
+    'form_section_subtitle' => '[de] Download YouTube videos to mp3 and mp4 online for free',
+    'form_placeholder_search_or_paste' => '[de] Search keywords or paste video link here',
+    'copyrighted_content_warning' => '[de] Copyrighted content is not available for download with this tool.',
 ];
 ?>
