@@ -19,9 +19,10 @@
 <header class="bg-white shadow-md">
 <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
 <a class="text-2xl font-bold text-blue-600" href="index.php">ytid.com</a> <div class="flex items-center space-x-4">
-<a class="text-gray-600 hover:text-blue-600" href="index.php">YouTube Downloader</a>
-<a class="text-gray-600 hover:text-blue-600" href="index.php">YouTube To Mp3</a>
-<a class="text-gray-600 hover:text-blue-600" href="index.php">YouTube To Mp4</a>
+<a class="text-gray-600 hover:text-blue-600" href="index.php"><?php echo _t('nav_home', 'YouTube Downloader'); ?></a>
+<a class="text-gray-600 hover:text-blue-600" href="youtube-to-mp3.php"><?php echo _t('nav_yt_to_mp3', 'YouTube To Mp3'); ?></a>
+<a class="text-gray-600 hover:text-blue-600" href="youtube-to-mp4.php"><?php echo _t('nav_yt_to_mp4', 'YouTube To Mp4'); ?></a>
+<a class="text-gray-600 hover:text-blue-600" href="youtube-thumbnail-downloader.php"><?php echo _t('nav_thumb_downloader', 'Thumbnail Downloader'); ?></a>
 <div class="relative" id="language-switcher">
         <button class="text-gray-600 hover:text-blue-600 flex items-center" onclick="document.getElementById('language-dropdown').classList.toggle('hidden');">
             <img src="assets/images/country_logos/<?php echo htmlspecialchars($language_logos[$current_language]); ?>" alt="<?php echo htmlspecialchars($available_languages[$current_language]); ?>" class="w-5 h-auto mr-2">
