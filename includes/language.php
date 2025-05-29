@@ -53,13 +53,16 @@ $language_logos = [
 
 $default_language = 'en';
 
+// Determine the current language
 if (isset($_GET['lang']) && array_key_exists($_GET['lang'], $available_languages)) {
-    $_SESSION['lang'] = $_GET['lang'];
-} elseif (!isset($_SESSION['lang'])) {
-    $_SESSION['lang'] = $default_language;
+    $current_language = $_GET['lang']; // Prioritize GET parameter for current request
+    $_SESSION['lang'] = $current_language; // Update session
+} elseif (isset($_SESSION['lang']) && array_key_exists($_SESSION['lang'], $available_languages)) {
+    $current_language = $_SESSION['lang']; // Fallback to session if GET is not set or invalid
+} else {
+    $current_language = $default_language; // Default if no valid GET or session language
+    $_SESSION['lang'] = $current_language; // Ensure session is set to default
 }
-
-$current_language = $_SESSION['lang'];
 
 $lang_file_path = __DIR__ . "/../languages/{$current_language}.php";
 $default_lang_file_path = __DIR__ . "/../languages/{$default_language}.php";
