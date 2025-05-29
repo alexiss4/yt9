@@ -1,0 +1,27 @@
+/* Ensure vertical alignment of image and text in the language switcher button and dropdown items */
+#language-switcher button img,
+#language-dropdown a img {
+    vertical-align: middle; /* Ensures image aligns well with text */
+}
+
+/* Optional: Style for the dropdown if it becomes very long */
+#language-dropdown {
+    max-height: 300px; /* Adjust as needed */
+    overflow-y: auto;  /* Add scroll if content exceeds max-height */
+}
+
+/* Ensure images within the language switcher do not exceed their container's dimensions
+   and maintain aspect ratio, specifically for the small logos.
+   Tailwind's w-5 (width) and h-auto (height auto) should mostly handle this,
+   but explicit rules can prevent issues. */
+#language-switcher img {
+    max-width: 100%; /* Ensure image is not wider than its container */
+    height: auto;    /* Maintain aspect ratio */
+    display: inline-block; /* Aligns better with text if not already flexed */
+}
+
+/* Minor adjustment for spacing if needed - Tailwind mr-2 is generally good */
+/* #language-switcher button img,
+#language-dropdown a img {
+    margin-right: 0.5rem; /* Tailwind's mr-2 */
+} */

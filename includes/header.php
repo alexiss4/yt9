@@ -1,3 +1,4 @@
+<?php require_once 'includes/language.php'; ?>
 <!DOCTYPE html>
 <html lang="en"><head>
 <meta charset="utf-8"/>
@@ -21,12 +22,39 @@
 <a class="text-gray-600 hover:text-blue-600" href="index.php">YouTube Downloader</a>
 <a class="text-gray-600 hover:text-blue-600" href="index.php">YouTube To Mp3</a>
 <a class="text-gray-600 hover:text-blue-600" href="index.php">YouTube To Mp4</a>
-<div class="relative">
-<button class="text-gray-600 hover:text-blue-600 flex items-center">
-                        English
-                        <span class="material-icons text-sm ml-1">expand_more</span>
-</button>
+<div class="relative" id="language-switcher">
+        <button class="text-gray-600 hover:text-blue-600 flex items-center" onclick="document.getElementById('language-dropdown').classList.toggle('hidden');">
+            <img src="assets/images/country_logos/<?php echo htmlspecialchars($language_logos[$current_language]); ?>" alt="<?php echo htmlspecialchars($available_languages[$current_language]); ?>" class="w-5 h-auto mr-2">
+            <?php echo htmlspecialchars($available_languages[$current_language]); ?>
+            <span class="material-icons text-sm ml-1">expand_more</span>
+        </button>
+        <div id="language-dropdown" class="absolute right-0 mt-2 py-2 w-48 bg-white rounded-md shadow-xl z-20 hidden">
+            <?php foreach ($available_languages as $lang_code => $lang_name): ?>
+                <?php if ($lang_code !== $current_language): ?>
+                    <a href="?lang=<?php echo htmlspecialchars($lang_code); ?>" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-500 hover:text-white">
+                        <img src="assets/images/country_logos/<?php echo htmlspecialchars($language_logos[$lang_code]); ?>" alt="<?php echo htmlspecialchars($lang_name); ?>" class="w-5 h-auto mr-2 inline-block">
+                        <?php echo htmlspecialchars($lang_name); ?>
+                    </a>
+                <?php endif; ?>
+            <?php endforeach; ?>
+        </div>
+    </div>
 </div>
-</div>
+<script>
+        const langSwitcherButton = document.querySelector('#language-switcher button');
+        const langDropdown = document.getElementById('language-dropdown');
+
+        // Toggle dropdown
+        // langSwitcherButton.addEventListener('click', () => { // Commented out as onclick is on the button
+        //     langDropdown.classList.toggle('hidden');
+        // });
+
+        // Close dropdown if clicked outside
+        window.addEventListener('click', function(e) {
+            if (!langSwitcherButton.contains(e.target) && !langDropdown.contains(e.target)) {
+                langDropdown.classList.add('hidden');
+            }
+        });
+    </script>
 </nav>
 </header>
