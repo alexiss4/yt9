@@ -5,26 +5,46 @@
     include("includes/header.php"); 
 ?>
 <main>
-<section class="bg-gradient-to-b from-blue-100 to-blue-50 py-16">
-<div class="container mx-auto px-6 text-center">
-<div class="bg-white p-8 md:p-12 rounded-xl shadow-xl max-w-3xl mx-auto">
-<h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">YouTube Video Downloader</h1>
-<p class="text-gray-600 mb-8">Download YouTube videos to mp3 and mp4 online for free.</p>
-<form id="video-url-form" class="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-2">
-<input name="url" class="flex-grow w-full sm:w-auto p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" placeholder="Search keywords or paste video link here" type="text" required/>
-<button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-4 px-6 rounded-lg flex items-center justify-center w-full sm:w-auto">
-<span class="material-icons mr-2">search</span>
-                            Download
-                        </button>
-</form>
-<p class="text-xs text-gray-500 mt-4 flex items-center justify-center">
-                        Copyrighted content is not available for download with this tool.
-                        <span class="material-icons text-sm ml-1">info_outline</span>
-</p>
-</div>
-</div>
+<!-- section begin -->
+<section id="convert-section" class="py-16 bg-yt1d-section-bg"> <!-- Outer section, py-16 for padding like current -->
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8"> <!-- Standard container -->
+        <div class="max-w-2xl mx-auto text-center p-8 md:p-12 bg-yt1d-content-bg rounded-2xl shadow-yt1d-soft"> <!-- Inner content box for centering and max-width -->
+            
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-3"><?php echo _t('form_section_title', 'YouTube Video Downloader'); ?></h1>
+            <p class="text-gray-600 mb-6"><?php echo _t('form_section_subtitle', 'Download YouTube videos to mp3 and mp4 online for free'); ?></p>
+
+            <form id="form_sb" method="POST" action="" class="mb-4"> <!-- Action will be handled by JS or current page reload -->
+                <div class="relative flex items-center">
+                    <input type="text" id="txt-url" name="url" class="w-full p-4 pr-12 text-gray-700 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="<?php echo _t('form_placeholder_search_or_paste', 'Search keywords or paste video link here'); ?>" required>
+                    <button type="submit" id="btn-submit" class="absolute right-0 top-0 h-full px-5 text-gray-600 hover:text-blue-600">
+                        <span class="material-icons">search</span>
+                    </button>
+                    <?php /* 
+                        Paste and Clear buttons from example are more complex for now. 
+                        Focus on input and main submit.
+                        <a id="btn-paste"...><i class="icon_clipboard"></i></a> 
+                        <a id="btn-clear"...><i class="icon_close_alt"></i></a>
+                    */ ?>
+                </div>
+            </form>
+
+            <div id="copyrightedTip">
+                <p class="text-xs text-gray-500 flex items-center justify-center">
+                    <?php echo _t('copyrighted_content_warning', 'Copyrighted content is not available for download with this tool.'); ?>
+                    <span class="material-icons text-sm ml-1">info_outline</span>
+                </p>
+            </div>
+
+            <?php /* Placeholders from yt1d example - keep them for structure but they won't be functional yet */ ?>
+            <div id="de-loader" style="display: none;" class="mt-4"></div>
+            <div id="result-wait" style="display: none;" class="text-center mt-3"></div>
+            <div id="captchaContainer" style="margin-top: 20px;"></div>
+            <div id="result" class="mt-4"></div> <!-- This was #video-info-container -->
+
+        </div>
+    </div>
 </section>
-<div id="video-info-container" class="mt-8"></div>
+<!-- The existing #video-info-container div can be removed if #result serves the same purpose, or #result can be renamed to #video-info-container -->
 <section class="py-16">
 <div class="container mx-auto px-6">
 <p class="text-gray-700 text-center max-w-3xl mx-auto mb-12">
