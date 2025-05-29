@@ -139,4 +139,54 @@ $lang = [
    // New Content Paragraphs - Viewer
    'viewer_new_para1' => 'Our Instagram Profile Viewer allows you to browse public Instagram profiles without needing to log in to your own Instagram account, offering a degree of anonymity. You can explore posts, see profile pictures in full size, and check out the general feed of any public user. This is useful for quick checks or if you don\'t have an Instagram account yourself.',
    'viewer_new_para2' => 'While viewing, you can also often identify content you might want to download using our other specific tools (like photo or video downloaders). It’s a great starting point for exploring public content. Please remember, this tool respects Instagram\'s privacy settings and cannot be used to view private profiles or access content that is not publicly available.',
+
+    // YouTube to MP3 Page Specific
+    'yt_to_mp3_title' => 'YouTube To Mp3 Converter',
+    'yt_to_mp3_description' => 'Convert YouTube videos to MP3 format quickly and easily.',
+    'enter_youtube_url_placeholder' => 'Paste YouTube video link here',
+    'convert_to_mp3_button' => 'Convert to MP3',
+    'yt_to_mp3_features_title' => 'Features of Our YouTube to MP3 Converter',
+    'feature_high_quality_audio_title' => 'High Quality Audio',
+    'feature_high_quality_audio_desc' => 'Extract MP3 audio from YouTube videos in the best available quality.',
+    'feature_fast_conversion_title' => 'Fast Conversion',
+    'feature_fast_conversion_desc' => 'Our service quickly processes your video and starts the MP3 conversion.',
+    'feature_easy_to_use_title' => 'Easy to Use',
+    'feature_easy_to_use_desc' => 'Just paste the YouTube URL, click convert, and download your MP3.',
+    'feature_no_registration_mp3_title' => 'No Registration Needed',
+    'feature_no_registration_mp3_desc' => 'Convert videos to MP3 without any signup or registration required.',
+
+    // YouTube to MP4 Page Specific
+    'yt_to_mp4_title' => 'YouTube To Mp4 Converter',
+    'yt_to_mp4_description' => 'Download and convert YouTube videos to MP4 format in various resolutions.',
+    'convert_to_mp4_button' => 'Convert to MP4',
+    'yt_to_mp4_features_title' => 'Features of Our YouTube to MP4 Converter',
+    'feature_high_resolution_title' => 'High Resolution Video',
+    'feature_high_resolution_desc' => 'Download MP4 videos in resolutions up to 4K and 8K where available.',
+    'feature_multiple_formats_mp4_title' => 'Multiple Format Options',
+    'feature_multiple_formats_mp4_desc' => 'Choose from various MP4 quality levels and other video formats if needed.',
+    'feature_fast_download_mp4_title' => 'Fast Downloads',
+    'feature_fast_download_mp4_desc' => 'Our service quickly processes your video for fast MP4 downloads.',
+    'feature_no_registration_mp4_title' => 'No Registration Needed',
+    'feature_no_registration_mp4_desc' => 'Download and convert videos to MP4 without any signup or registration.',
+
+    // YouTube Thumbnail Downloader Page Specific
+    'thumb_max_res' => 'Max Resolution',
+    'thumb_sd_res' => 'Standard Definition',
+    'thumb_hq_res' => 'High Quality',
+    'thumb_mq_res' => 'Medium Quality',
+    'thumb_default_res' => 'Default Quality',
+    'error_invalid_youtube_url' => 'Invalid YouTube URL. Please enter a valid video link.',
+    'error_empty_youtube_url' => 'Please enter a YouTube URL.',
+    'yt_thumb_title' => 'YouTube Thumbnail Downloader',
+    'yt_thumb_description' => 'Download thumbnails from YouTube videos in various resolutions.',
+    'get_thumbnails_button' => 'Get Thumbnails',
+    'available_thumbnails_title' => 'Available Thumbnails',
+    'thumb_not_available' => 'Thumbnail not available at this resolution.',
+    'download_thumb_button' => 'Download',
+
+    // Navigation Menu
+    'nav_home' => 'YouTube Downloader',
+    'nav_yt_to_mp3' => 'YouTube To Mp3',
+    'nav_yt_to_mp4' => 'YouTube To Mp4',
+    'nav_thumb_downloader' => 'Thumbnail Downloader',
 ];
