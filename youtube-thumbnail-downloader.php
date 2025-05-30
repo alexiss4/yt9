@@ -1,15 +1,13 @@
 <?php
-    ini_set('display_errors', 1);
-    ini_set('display_startup_errors', 1);
-    error_reporting(E_ALL);
-    include("includes/header.php");
+    require_once __DIR__ . '/config.php';
+    require_once __DIR__ . '/includes/header.php';
 
     $video_id = null;
     $thumbnail_urls = [];
     $error_message = '';
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
-        $url = trim($_POST['url']);
+        $url = sanitize_input(trim($_POST['url']));
         if (!empty($url)) {
             // Regex to extract YouTube video ID from various URL formats
             $regex = '/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/';
@@ -43,16 +41,18 @@
             <div class="bg-white p-8 md:p-12 rounded-xl shadow-xl max-w-3xl mx-auto">
                 <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4"><?php echo _t('yt_thumb_title', 'YouTube Thumbnail Downloader'); ?></h1>
                 <p class="text-gray-600 mb-8"><?php echo _t('yt_thumb_description', 'Download thumbnails from YouTube videos in various resolutions.'); ?></p>
-                <form id="video-url-form-thumbnail" method="POST" action="youtube-thumbnail-downloader.php" class="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-2">
-                    <input name="url" class="flex-grow w-full sm:w-auto p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none" placeholder="<?php echo _t('enter_youtube_url_placeholder', 'Paste YouTube video link here'); ?>" type="text" required value="<?php echo isset($_POST['url']) ? htmlspecialchars($_POST['url']) : ''; ?>"/>
-                    <button type="submit" class="bg-teal-500 hover:bg-teal-600 text-white font-semibold py-4 px-6 rounded-lg flex items-center justify-center w-full sm:w-auto">
-                        <span class="material-icons mr-2">image</span>
-                        <?php echo _t('get_thumbnails_button', 'Get Thumbnails'); ?>
-                    </button>
-                </form>
+                <?php
+                $form_id = 'video-url-form-thumbnail';
+                $input_placeholder = _t('enter_youtube_url_placeholder', 'Paste YouTube video link here');
+                $button_text = _t('get_thumbnails_button', 'Get Thumbnails');
+                $button_icon = 'image';
+                $form_action_url = 'youtube-thumbnail-downloader.php'; 
+                $show_copyright_warning = false; 
+                require __DIR__ . '/includes/ui_components/video_form.php'; 
+                ?>
 
                 <?php if (!empty($error_message)): ?>
-                    <p class="text-red-500 mt-4"><?php echo htmlspecialchars($error_message); ?></p>
+                    <p class="text-red-500 mt-4"><?php echo htmlspecialchars($error_message); // Keep error message display specific to this page ?></p>
                 <?php endif; ?>
             </div>
         </div>
@@ -79,4 +79,4 @@
     <?php endif; ?>
 
 </main>
-<?php include("includes/footer.php"); ?>
+<?php require_once __DIR__ . '/includes/footer.php'; ?>

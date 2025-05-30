@@ -1,13 +1,15 @@
 <?php
+// languages/en.php
 $lang = [
-    'site_title' => 'SaveFromIG.com - Instagram Downloader',
+    // Existing Instagram Downloader translations (preserved)
+    'site_title' => 'SaveFromIG.com - Instagram Downloader', // This will likely be overridden by a more specific title in header.php if _t('site_title') is used there with a different default.
     'home' => 'Home',
     'about' => 'About',
     'contact' => 'Contact',
     'language' => 'Language',
     'hero_description' => 'Download Instagram photos, videos, and stories easily!',
     'enter_instagram_url' => 'Enter Instagram URL',
-    'download' => 'Download',
+    'download' => 'Download', // Generic, might be reused or might need context-specific versions
     'copy' => 'Copy',
     'post' => 'Post',
     'fast_and_easy' => 'Fast & Easy',
@@ -39,8 +41,6 @@ $lang = [
     'quick_links' => 'Quick Links',
     'follow_us' => 'Follow Us',
     'all_rights_reserved' => 'All rights reserved.',
-
-    // Page Titles
     'page_title_home' => 'Instagram Downloader - Download Photos, Videos, Reels',
     'page_title_video' => 'Instagram Video Downloader',
     'page_title_photo' => 'Instagram Photo Downloader',
@@ -48,9 +48,7 @@ $lang = [
     'page_title_story' => 'Instagram Story Downloader',
     'page_title_igtv' => 'Instagram IGTV Downloader',
     'page_title_carousel' => 'Instagram Carousel Downloader',
-    'page_title_profile' => 'Instagram Profile Viewer', // For viewer.php
-
-    // Extra Content Sections
+    'page_title_profile' => 'Instagram Profile Viewer',
     'video_extra_title' => 'More About Video Downloads',
     'video_extra_p1' => 'Our service supports various video formats and resolutions, ensuring you get the best quality available. You can also choose to download only the audio from a video if needed.',
     'video_extra_p2' => 'Remember to respect copyright and privacy. Only download videos if you have the right to do so. For private accounts, you will not be able to download their content.',
@@ -72,11 +70,7 @@ $lang = [
     'viewer_extra_title' => 'Profile Viewing Tips',
     'viewer_extra_p1' => 'When viewing profiles, remember that only public information is accessible. Our tool does not bypass Instagram\'s privacy settings.',
     'viewer_extra_p2' => 'You can use the viewer to check out recent posts and story highlights of public profiles without needing to log in.',
-
-    // Link Texts
     'faq_link_text' => 'FAQ',
-
-    // FAQ Section
     'faq_title' => 'Frequently Asked Questions',
     'faq_q1_question' => 'What is SaveFromIG.com?',
     'faq_q1_answer' => 'SaveFromIG.com is a free online service that allows you to easily download Instagram content such as photos, videos, Reels, IGTV videos, and carousel posts directly to your device.',
@@ -88,62 +82,69 @@ $lang = [
     'faq_q4_answer' => 'SaveFromIG.com is a web-based tool and works on any device with a modern web browser, including PCs, Macs, iPhones, Android phones, and tablets. No software installation is required.',
     'faq_q5_question' => 'What is the quality of the downloaded photos and videos?',
     'faq_q5_answer' => 'SaveFromIG.com aims to download content in the highest quality available, as originally uploaded by the user on Instagram. We do not alter the quality of the media.',
-
-    // For index.php refinement
     'key_features_summary_title' => 'Core Features of Our Instagram Downloader',
     'key_features_summary_text' => 'Our Instagram Downloader offers high-quality downloads across multiple formats like photos, videos, Reels, and more. It\\\'s fast, reliable, and requires no user login. Enjoy a user-friendly experience on any device, completely free of charge, for all your Instagram content saving needs.',
     'why_use_summary_text' => 'In a digital world full of shareable moments, our Instagram Downloader provides a simple, reliable solution to save the content that matters to you. Preserve your favorite media for offline access, build a personal collection, or ensure you always have important information at hand. Explore our specific downloaders for Photos, Videos, Reels, and more to get started!',
+    'video_page_h1' => 'Instagram Video Downloader',
+    'photo_page_h1' => 'Instagram Photo Downloader',
+    'reels_page_h1' => 'Instagram Reels Downloader',
+    'story_page_h1' => 'Instagram Story Downloader',
+    'igtv_page_h1' => 'Instagram IGTV Downloader',
+    'carousel_page_h1' => 'Instagram Carousel Downloader',
+    'viewer_page_h1' => 'Instagram Profile Viewer',
+    'video_meta_desc' => 'Easily download Instagram videos in high quality. Save your favorite IG videos, tutorials, and clips for offline viewing with our fast and free video downloader.',
+    'photo_meta_desc' => 'Download Instagram photos in full resolution. Save high-quality IG images, portraits, and artwork to your device with our quick and easy photo downloader.',
+    'reels_meta_desc' => 'Download Instagram Reels videos with audio. Save entertaining and creative IG Reels quickly and easily for offline enjoyment with our free Reels downloader.',
+    'story_meta_desc' => 'Save Instagram Stories before they disappear. Download IG Stories anonymously and view them offline with our fast and easy Instagram Story saver.',
+    'igtv_meta_desc' => 'Download long-form IGTV videos from Instagram. Save tutorials, series, and extended videos for offline viewing with our reliable IGTV downloader.',
+    'carousel_meta_desc' => 'Download multiple photos and videos from Instagram carousel posts. Save entire IG albums or slideshows easily with our carousel downloader tool.',
+    'viewer_meta_desc' => 'View Instagram profiles anonymously. Browse public IG profiles, photos, videos, and stories without an account using our online Instagram viewer.',
+    'video_new_para1' => 'Our Instagram Video Downloader tool simplifies the process of saving videos from Instagram directly to your device. Whether it\'s a captivating short film, an informative tutorial, or a cherished memory shared by a friend, you can preserve it indefinitely. Downloading Instagram videos allows you to watch them later without an internet connection, share them across other platforms (with proper attribution), or include them in your own video compilations or projects.',
+    'video_new_para2' => 'Using our service, you can grab videos in their original resolution, ensuring you don\'t lose any of the visual quality. We support various formats commonly found on Instagram, making it a versatile solution for all your IG video downloading needs. Remember to always respect the content creator\'s rights and privacy when downloading and using videos from Instagram.',
+    'photo_new_para1' => 'Capture and save your favorite Instagram photos with our dedicated Instagram Photo Downloader. This tool is perfect for archiving stunning photography, memorable moments, or inspirational images shared on Instagram. By downloading photos, you can ensure you have a personal copy for offline viewing, use them as wallpapers, or for creative projects, always remembering to credit the original poster.',
+    'photo_new_para2' => 'Our downloader fetches Instagram pictures in their highest possible quality, so you get a clear, crisp image every time. It\'s designed to be straightforward – just paste the Instagram photo link, and you\'re ready to download. This is an essential tool for anyone looking to keep a personal archive of inspiring visual content from Instagram.',
+    'reels_new_para1' => 'Instagram Reels are a fantastic source of short, engaging video content. Our Instagram Reels Downloader lets you save these creative clips directly to your device, complete with audio. Whether it\'s a funny sketch, a new dance trend, or a quick tutorial, you can keep it for offline viewing or sharing with friends (always ensure you have permission or give credit).',
+    'reels_new_para2' => 'Downloading Reels is also great for content creators who want to analyze trends or save their own work as a backup. Our tool aims to provide the best quality download possible, preserving the original video and audio integrity. Stay updated with the latest viral content by having your favorite Reels available anytime, anywhere.',
+    'story_new_para1' => 'Instagram Stories are fleeting, lasting only 24 hours. With our Instagram Story Downloader, you can capture and save these moments – whether they\'re photos or videos – before they\'re gone forever. This is perfect for saving memories, important announcements, or inspiring content shared in a Story format by public accounts.',
+    'story_new_para2' => 'Our tool allows you to download stories from public profiles without notifying the user, ensuring your viewing remains private if desired. It\'s a simple way to keep a personal archive of stories you find interesting or important. Remember that stories from private accounts cannot be accessed with this tool, respecting user privacy settings.',
+    'igtv_new_para1' => 'IGTV provides a platform for longer video content on Instagram, from in-depth tutorials to ongoing series. Our Instagram IGTV Downloader helps you save these valuable long-form videos to your device. This is ideal for learning, entertainment, or catching up on content from your favorite creators at your own pace, even without an internet connection.',
+    'igtv_new_para2' => 'Downloading IGTV videos means you can watch them on a larger screen, incorporate clips into presentations (with permission), or simply ensure you don\'t miss out if the content is later removed. Our service focuses on providing high-quality downloads and a user-friendly experience for all your IGTV saving needs.',
+    'carousel_new_para1' => 'Instagram carousel posts allow users to share multiple photos and videos in a single, swipeable post. Our Instagram Carousel Downloader makes it easy to download all items from such a post. Whether it\'s a photo series, a step-by-step guide, or a mix of videos and images, you can save the entire collection.',
+    'carousel_new_para2' => 'This tool is incredibly useful for saving detailed tutorials, event highlights, or product showcases shared in a carousel format. Each item is downloaded individually in its best quality, allowing you to appreciate every part of the post. It’s a convenient way to ensure you capture the full story told through an Instagram carousel.',
+    'viewer_new_para1' => 'Our Instagram Profile Viewer allows you to browse public Instagram profiles without needing to log in to your own Instagram account, offering a degree of anonymity. You can explore posts, see profile pictures in full size, and check out the general feed of any public user. This is useful for quick checks or if you don\'t have an Instagram account yourself.',
+    'viewer_new_para2' => 'While viewing, you can also often identify content you might want to download using our other specific tools (like photo or video downloaders). It’s a great starting point for exploring public content. Please remember, this tool respects Instagram\'s privacy settings and cannot be used to view private profiles or access content that is not publicly available.',
 
-    // Page H1s
-   'video_page_h1' => 'Instagram Video Downloader',
-   'photo_page_h1' => 'Instagram Photo Downloader',
-   'reels_page_h1' => 'Instagram Reels Downloader',
-   'story_page_h1' => 'Instagram Story Downloader',
-   'igtv_page_h1' => 'Instagram IGTV Downloader',
-   'carousel_page_h1' => 'Instagram Carousel Downloader',
-   'viewer_page_h1' => 'Instagram Profile Viewer',
+    // YouTube Project Specific Strings Start Here
+    // General Site
+    'site_title_youtube' => 'YouTube Video Downloader', // More specific title for YouTube project
+    'nav_home' => 'YouTube Downloader',
+    'nav_yt_to_mp3' => 'YouTube To Mp3',
+    'nav_yt_to_mp4' => 'YouTube To Mp4',
+    'nav_thumb_downloader' => 'Thumbnail Downloader',
+    'copyrighted_content_warning' => 'Copyrighted content is not available for download with this tool.',
+    'enter_youtube_url_placeholder' => 'Paste YouTube video link here',
+    'enter_youtube_url_or_search_placeholder' => 'Search keywords or paste video link here',
+    'download_button' => 'Download',
 
-   // Meta Descriptions
-   'video_meta_desc' => 'Easily download Instagram videos in high quality. Save your favorite IG videos, tutorials, and clips for offline viewing with our fast and free video downloader.',
-   'photo_meta_desc' => 'Download Instagram photos in full resolution. Save high-quality IG images, portraits, and artwork to your device with our quick and easy photo downloader.',
-   'reels_meta_desc' => 'Download Instagram Reels videos with audio. Save entertaining and creative IG Reels quickly and easily for offline enjoyment with our free Reels downloader.',
-   'story_meta_desc' => 'Save Instagram Stories before they disappear. Download IG Stories anonymously and view them offline with our fast and easy Instagram Story saver.',
-   'igtv_meta_desc' => 'Download long-form IGTV videos from Instagram. Save tutorials, series, and extended videos for offline viewing with our reliable IGTV downloader.',
-   'carousel_meta_desc' => 'Download multiple photos and videos from Instagram carousel posts. Save entire IG albums or slideshows easily with our carousel downloader tool.',
-   'viewer_meta_desc' => 'View Instagram profiles anonymously. Browse public IG profiles, photos, videos, and stories without an account using our online Instagram viewer.',
+    // Index Page
+    'form_section_title' => 'YouTube Video Downloader',
+    'form_section_subtitle' => 'Download YouTube videos to mp3 and mp4 online for free.',
+    'feature_versatility_title' => 'Versatility in Format',
+    'feature_versatility_desc' => 'Download YouTube videos to MP4/MP3 format. Convert YouTube video files, catering to diverse needs such as offline playback, video editing, and professional editing.',
+    'feature_high_quality_title' => 'High-Quality Options',
+    'feature_high_quality_desc' => 'Download YouTube videos, Shorts, and music to MP3, MP4 formats in original full HD, 1080p, 4k and even 8k.',
+    'feature_free_title' => 'Absolutely Free',
+    'feature_free_desc' => 'Enjoy unlimited YouTube video and music downloads with our ytid.com without spending a dime. ytid is committed to providing a completely free service for all users.',
+    'feature_fast_downloads_title' => 'Fastly Downloads',
+    'feature_fast_downloads_desc' => 'ytid offers a fast YouTube video downloader. All downloads can be completed with incredible, providing you with high-speed downloads.',
+    'feature_no_signup_title' => 'No Sign-up Required',
+    'feature_no_signup_desc' => 'Our safe YouTube downloader ensures that your online data and user privacy are our top priorities. No login is required, and we do not store your user private information.',
+    'feature_cross_platform_title' => 'Cross-Platform Compatibility',
+    'feature_cross_platform_desc' => 'Download YouTube videos instantly across various systems and electronic devices through any web browser (Chrome/Safari) without client installation required.',
 
-   // New Content Paragraphs - Video
-   'video_new_para1' => 'Our Instagram Video Downloader tool simplifies the process of saving videos from Instagram directly to your device. Whether it\'s a captivating short film, an informative tutorial, or a cherished memory shared by a friend, you can preserve it indefinitely. Downloading Instagram videos allows you to watch them later without an internet connection, share them across other platforms (with proper attribution), or include them in your own video compilations or projects.',
-   'video_new_para2' => 'Using our service, you can grab videos in their original resolution, ensuring you don\'t lose any of the visual quality. We support various formats commonly found on Instagram, making it a versatile solution for all your IG video downloading needs. Remember to always respect the content creator\'s rights and privacy when downloading and using videos from Instagram.',
-
-   // New Content Paragraphs - Photo
-   'photo_new_para1' => 'Capture and save your favorite Instagram photos with our dedicated Instagram Photo Downloader. This tool is perfect for archiving stunning photography, memorable moments, or inspirational images shared on Instagram. By downloading photos, you can ensure you have a personal copy for offline viewing, use them as wallpapers, or for creative projects, always remembering to credit the original poster.',
-   'photo_new_para2' => 'Our downloader fetches Instagram pictures in their highest possible quality, so you get a clear, crisp image every time. It\'s designed to be straightforward – just paste the Instagram photo link, and you\'re ready to download. This is an essential tool for anyone looking to keep a personal archive of inspiring visual content from Instagram.',
-
-   // New Content Paragraphs - Reels
-   'reels_new_para1' => 'Instagram Reels are a fantastic source of short, engaging video content. Our Instagram Reels Downloader lets you save these creative clips directly to your device, complete with audio. Whether it\'s a funny sketch, a new dance trend, or a quick tutorial, you can keep it for offline viewing or sharing with friends (always ensure you have permission or give credit).',
-   'reels_new_para2' => 'Downloading Reels is also great for content creators who want to analyze trends or save their own work as a backup. Our tool aims to provide the best quality download possible, preserving the original video and audio integrity. Stay updated with the latest viral content by having your favorite Reels available anytime, anywhere.',
-
-   // New Content Paragraphs - Story
-   'story_new_para1' => 'Instagram Stories are fleeting, lasting only 24 hours. With our Instagram Story Downloader, you can capture and save these moments – whether they\'re photos or videos – before they\'re gone forever. This is perfect for saving memories, important announcements, or inspiring content shared in a Story format by public accounts.',
-   'story_new_para2' => 'Our tool allows you to download stories from public profiles without notifying the user, ensuring your viewing remains private if desired. It\'s a simple way to keep a personal archive of stories you find interesting or important. Remember that stories from private accounts cannot be accessed with this tool, respecting user privacy settings.',
-
-   // New Content Paragraphs - IGTV
-   'igtv_new_para1' => 'IGTV provides a platform for longer video content on Instagram, from in-depth tutorials to ongoing series. Our Instagram IGTV Downloader helps you save these valuable long-form videos to your device. This is ideal for learning, entertainment, or catching up on content from your favorite creators at your own pace, even without an internet connection.',
-   'igtv_new_para2' => 'Downloading IGTV videos means you can watch them on a larger screen, incorporate clips into presentations (with permission), or simply ensure you don\'t miss out if the content is later removed. Our service focuses on providing high-quality downloads and a user-friendly experience for all your IGTV saving needs.',
-
-   // New Content Paragraphs - Carousel
-   'carousel_new_para1' => 'Instagram carousel posts allow users to share multiple photos and videos in a single, swipeable post. Our Instagram Carousel Downloader makes it easy to download all items from such a post. Whether it\'s a photo series, a step-by-step guide, or a mix of videos and images, you can save the entire collection.',
-   'carousel_new_para2' => 'This tool is incredibly useful for saving detailed tutorials, event highlights, or product showcases shared in a carousel format. Each item is downloaded individually in its best quality, allowing you to appreciate every part of the post. It’s a convenient way to ensure you capture the full story told through an Instagram carousel.',
-
-   // New Content Paragraphs - Viewer
-   'viewer_new_para1' => 'Our Instagram Profile Viewer allows you to browse public Instagram profiles without needing to log in to your own Instagram account, offering a degree of anonymity. You can explore posts, see profile pictures in full size, and check out the general feed of any public user. This is useful for quick checks or if you don\'t have an Instagram account yourself.',
-   'viewer_new_para2' => 'While viewing, you can also often identify content you might want to download using our other specific tools (like photo or video downloaders). It’s a great starting point for exploring public content. Please remember, this tool respects Instagram\'s privacy settings and cannot be used to view private profiles or access content that is not publicly available.',
-
-    // YouTube to MP3 Page Specific
+    // YouTube to MP3 Page
     'yt_to_mp3_title' => 'YouTube To Mp3 Converter',
     'yt_to_mp3_description' => 'Convert YouTube videos to MP3 format quickly and easily.',
-    'enter_youtube_url_placeholder' => 'Paste YouTube video link here',
     'convert_to_mp3_button' => 'Convert to MP3',
     'yt_to_mp3_features_title' => 'Features of Our YouTube to MP3 Converter',
     'feature_high_quality_audio_title' => 'High Quality Audio',
@@ -155,44 +156,61 @@ $lang = [
     'feature_no_registration_mp3_title' => 'No Registration Needed',
     'feature_no_registration_mp3_desc' => 'Convert videos to MP3 without any signup or registration required.',
 
-    // YouTube to MP4 Page Specific
+    // YouTube to MP4 Page
     'yt_to_mp4_title' => 'YouTube To Mp4 Converter',
     'yt_to_mp4_description' => 'Download and convert YouTube videos to MP4 format in various resolutions.',
     'convert_to_mp4_button' => 'Convert to MP4',
     'yt_to_mp4_features_title' => 'Features of Our YouTube to MP4 Converter',
-    'feature_high_resolution_title' => 'High Resolution Video',
+    'feature_high_resolution_title' => 'High Resolution Video', // Shared with index, but context might differ if text changes
     'feature_high_resolution_desc' => 'Download MP4 videos in resolutions up to 4K and 8K where available.',
     'feature_multiple_formats_mp4_title' => 'Multiple Format Options',
     'feature_multiple_formats_mp4_desc' => 'Choose from various MP4 quality levels and other video formats if needed.',
     'feature_fast_download_mp4_title' => 'Fast Downloads',
     'feature_fast_download_mp4_desc' => 'Our service quickly processes your video for fast MP4 downloads.',
-    'feature_no_registration_mp4_title' => 'No Registration Needed',
+    'feature_no_registration_mp4_title' => 'No Registration Needed', // Shared, but context might differ
     'feature_no_registration_mp4_desc' => 'Download and convert videos to MP4 without any signup or registration.',
 
-    // YouTube Thumbnail Downloader Page Specific
+    // YouTube Thumbnail Downloader Page
+    'yt_thumb_title' => 'YouTube Thumbnail Downloader',
+    'yt_thumb_description' => 'Download thumbnails from YouTube videos in various resolutions.',
+    'get_thumbnails_button' => 'Get Thumbnails',
+    'available_thumbnails_title' => 'Available Thumbnails',
+    'download_thumb_button' => 'Download',
     'thumb_max_res' => 'Max Resolution',
     'thumb_sd_res' => 'Standard Definition',
     'thumb_hq_res' => 'High Quality',
     'thumb_mq_res' => 'Medium Quality',
     'thumb_default_res' => 'Default Quality',
+    'thumb_not_available' => 'Thumbnail not available at this resolution.',
+    
+    // Error Messages (New and from YtDlpWrapper usage)
     'error_invalid_youtube_url' => 'Invalid YouTube URL. Please enter a valid video link.',
     'error_empty_youtube_url' => 'Please enter a YouTube URL.',
-    'yt_thumb_title' => 'YouTube Thumbnail Downloader',
-    'yt_thumb_description' => 'Download thumbnails from YouTube videos in various resolutions.',
-    'get_thumbnails_button' => 'Get Thumbnails',
-    'available_thumbnails_title' => 'Available Thumbnails',
-    'thumb_not_available' => 'Thumbnail not available at this resolution.',
-    'download_thumb_button' => 'Download',
+    'error_yt_dlp_execution_failed' => 'Failed to execute video information command. Please check server configuration or yt-dlp installation.',
+    'error_parsing_video_info_json' => 'Failed to parse video information. The data may be malformed or incomplete.',
+    'error_yt_dlp_search_execution_failed' => 'Failed to execute video search command. Please check server configuration or yt-dlp installation.',
+    'error_retrieve_video_info_yt_dlp' => 'Could not retrieve video information. yt-dlp command failed or video is unavailable.', // Used in getFormattableVideoInfo
+    'error_parse_video_info_yt_dlp' => 'Failed to parse video information from yt-dlp output.', // Used in getFormattableVideoInfo
+    'error_invalid_url_format' => 'Invalid URL format.', // Used in api.php
+    'error_search_query_missing' => 'Search query missing.', // Used in api.php search
+    'error_fetch_video_info_download' => 'Error: Could not re-fetch video information for download.', // Used in download.php
+    'error_retrieve_video_info' => 'Could not retrieve video information.', // Generic, used in download.php HTML fallback
+    'no_suitable_formats_html' => 'No suitable download formats found for this video.', // Used in download.php HTML fallback
 
-    // Navigation Menu
-    'nav_home' => 'YouTube Downloader',
-    'nav_yt_to_mp3' => 'YouTube To Mp3',
-    'nav_yt_to_mp4' => 'YouTube To Mp4',
-    'nav_thumb_downloader' => 'Thumbnail Downloader',
+    // YtDlpWrapper specific formats/placeholders
+    'format_audio_mp3_best' => 'Audio MP3 (Best Available)',
+    'filesize_unknown' => 'N/A',
+    'format_video_mp4_quality' => "MP4 {quality}", // {quality} is a placeholder
+    'search_title_na' => 'N/A',
+    'search_uploader_na' => 'N/A',
+    'search_duration_na' => 'N/A',
 
-    // Index Page Form Section (New Keys from Refactor)
-    'form_section_title' => 'YouTube Video Downloader',
-    'form_section_subtitle' => 'Download YouTube videos to mp3 and mp4 online for free',
-    'form_placeholder_search_or_paste' => 'Search keywords or paste video link here',
-    // 'copyrighted_content_warning' is already defined and used
+    // Download page UI
+    'download_video_title_page' => 'Download Video: {title}', // {title} is placeholder
+    'video_thumbnail_alt' => 'Video Thumbnail',
+    'available_formats_title' => 'Available Formats:',
+
+    // ... any other pre-existing keys from the original file (if it was for YouTube project) would be here.
+    // For this merge, focusing on adding the new and ensuring YtDlpWrapper ones are present.
 ];
+?>
