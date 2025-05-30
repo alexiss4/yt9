@@ -3,7 +3,7 @@
 
 // Environment Setting
 // Set to false for development/debugging, true for production
-define('IS_PRODUCTION', false); // Default to false for now
+define('IS_PRODUCTION', true);
 
 // yt-dlp Path (leave as 'yt-dlp' if it's in system PATH)
 define('YT_DLP_PATH', 'yt-dlp');

@@ -48,12 +48,35 @@ class YtDlpWrapper {
      */
     private function executeCommand($command) {
         $output = shell_exec($command . " 2>&1"); // Capture stderr as well
-        if ($output === null || (strpos($output, "ERROR:") !== false && strlen($output) < 200) ) { // Basic error check
-            if (defined('LOG_FILE_PATH') && LOG_FILE_PATH) {
-                error_log("yt-dlp command error or no output. Command: $command. Output: $output");
-            }
-            return false;
+
+        // Check for null (command failed to run) or empty/whitespace-only output
+        if ($output === null || trim($output) === '') {
+            // Log if command returned empty or falsy output
+            error_log("YtDlpWrapper::executeCommand: Command returned empty, null, or whitespace-only output. Command: " . $command . " Raw Output: " . var_export($output, true));
+            return false; // Explicitly return false for these cases
         }
+        // Check for known yt-dlp error strings, but only if output is relatively short
+        // to avoid matching on video titles or descriptions that might contain "ERROR:"
+        if (strpos($output, "ERROR:") !== false && strlen($output) < 200) { 
+            if (defined('LOG_FILE_PATH') && LOG_FILE_PATH) { // This specific logging might be redundant if general one below is active
+                error_log("YtDlpWrapper::executeCommand: yt-dlp command error explicitly indicated. Command: $command. Output: " . $output);
+            }
+            // Also log if output doesn't look like JSON, which is often the case for yt-dlp direct error messages
+            if (!preg_match('/^\s*[{[]/', $output)) {
+                 error_log("YtDlpWrapper::executeCommand: Command returned non-JSON output, possibly an error message. Command: " . $command . " Output: " . substr($output, 0, 1000));
+            }
+            return false; // Return false if "ERROR:" is found in short output
+        }
+        
+        // Generic check for non-JSON output if it's not an empty string and no "ERROR:" was found
+        // This is tricky because search results are JSON lines, not a single JSON object.
+        // This check is more relevant for getVideoInfo. searchVideos handles line-by-line parsing.
+        // We'll make this check less aggressive here and rely more on json_decode checks in calling methods.
+        // if (!preg_match('/^\s*[{[]/', $output) && trim($output) !== '') {
+        //     error_log("YtDlpWrapper::executeCommand: Command returned potentially non-JSON output. Command: " . $command . " Output: " . substr($output, 0, 1000));
+        //     // Depending on strictness, might return false here. For now, let json_decode handle it.
+        // }
+
         return $output;
     }
     
@@ -82,9 +105,8 @@ class YtDlpWrapper {
         $video_info = json_decode($json_output, true);
         // Check if decoding failed or if essential data like 'title' is missing.
         if (json_last_error() !== JSON_ERROR_NONE || !$video_info || !isset($video_info['title'])) {
-            if (defined('LOG_FILE_PATH') && LOG_FILE_PATH) {
-                error_log("JSON Decode Error or missing title for URL: $url. Output: " . substr($json_output, 0, 500));
-            }
+            // Log the error and the problematic JSON string
+            error_log("YtDlpWrapper::getVideoInfo: Failed to parse JSON. Error: " . json_last_error_msg() . ". JSON Output: " . substr($json_output, 0, 1000)); 
             return ['error' => _t('error_parsing_video_info_json', 'Failed to parse video information. The data may be malformed or incomplete.')];
         }
         return $video_info; // Success
@@ -129,24 +151,29 @@ class YtDlpWrapper {
 
         if (isset($video_info['formats']) && is_array($video_info['formats'])) {
             foreach ($video_info['formats'] as $format) {
+                // Robust access to format keys
                 $format_note = $format['format_note'] ?? null;
                 $format_id = $format['format_id'] ?? null;
                 $ext = $format['ext'] ?? null;
-                $protocol = $format['protocol'] ?? '';
-                $vcodec = $format['vcodec'] ?? 'none';
-                $acodec = $format['acodec'] ?? 'none';
-                $height = $format['height'] ?? null;
-                $filesize = $format['filesize'] ?? ($format['filesize_approx'] ?? null);
+                $protocol = $format['protocol'] ?? ''; // Default to empty string
+                $height = (isset($format['height']) && is_numeric($format['height'])) ? (int)$format['height'] : null;
+                $vcodec = $format['vcodec'] ?? 'none'; // Default to 'none' as per existing logic
+                $acodec = $format['acodec'] ?? 'none'; // Default to 'none'
 
-                // Only process formats available over http/https
-                if (($protocol !== 'http' && $protocol !== 'https') || !$format_id || !$ext) {
+                // Updated protocol check for clarity and correctness
+                if (!in_array($protocol, ['http', 'https'])) {
+                    continue; // Skip if protocol is not http or https
+                }
+
+                if (!$format_id || !$ext) { // Skip if essential format_id or ext are missing
                     continue;
                 }
                 
+                $filesize = $format['filesize'] ?? ($format['filesize_approx'] ?? null);
                 $filesize_str = $filesize ? round($filesize / (1024*1024), 2) . " MB" : _t('filesize_unknown','N/A');
 
                 // Add MP4 video formats that have both video and audio
-                if ($ext === 'mp4' && $vcodec !== 'none' && $acodec !== 'none' && $height && in_array($format_note, $desired_video_formats)) {
+                if ($ext === 'mp4' && $vcodec !== 'none' && $acodec !== 'none' && $height && $format_note && in_array($format_note, $desired_video_formats)) {
                      $output_formats[] = [
                         'id' => $format_id,
                         'type' => 'mp4',
@@ -182,9 +209,15 @@ class YtDlpWrapper {
             }
         }
 
+        // Safely determine thumbnail URL
+        $thumbnail_url_final = $video_info['thumbnail'] ?? null;
+        if (!$thumbnail_url_final && isset($video_info['thumbnails']) && is_array($video_info['thumbnails']) && count($video_info['thumbnails']) > 0 && isset($video_info['thumbnails'][0]['url'])) {
+            $thumbnail_url_final = $video_info['thumbnails'][0]['url'];
+        }
+
         return [
             'title' => sanitize_input($video_info['title']), // Sanitize titles for display
-            'thumbnail_url' => sanitize_input($video_info['thumbnail'] ?? ($video_info['thumbnails'][0]['url'] ?? '')),
+            'thumbnail_url' => sanitize_input($thumbnail_url_final ?? ''), // Ensure thumbnail_url is sanitized and defaults to empty string if null
             'formats' => $final_formats, // Formats are already constructed with localization in mind
         ];
     }
@@ -280,15 +313,38 @@ class YtDlpWrapper {
             }
             $video_data = json_decode($line, true);
             // Basic validation of video data structure
-            if (json_last_error() === JSON_ERROR_NONE && is_array($video_data) && isset($video_data['id'])) {
+            $video_data = json_decode($line, true);
+            if (json_last_error() !== JSON_ERROR_NONE && is_array($video_data) && isset($video_data['id'])) {
+                // This part is fine, the issue is if $line itself is not JSON
+                // The check for $video_data['id'] is good.
+                $id = $video_data['id'] ?? null; // This null coalesce is redundant due to isset check above.
+                // if (!$id) { // This check is also somewhat redundant.
+                //     error_log("YtDlpWrapper::searchVideos: Parsed JSON line but 'id' is missing. Line: " . $line);
+                //     continue; 
+                // }
+
+                $title = $video_data['title'] ?? _t('search_title_na', 'N/A');
+            
+                $thumbnail = $video_data['thumbnail'] ?? null;
+                if (!$thumbnail && isset($video_data['thumbnails']) && is_array($video_data['thumbnails']) && count($video_data['thumbnails']) > 0 && isset($video_data['thumbnails'][0]['url'])) {
+                    $thumbnail = $video_data['thumbnails'][0]['url'];
+                }
+            
+                $uploader = $video_data['uploader'] ?? _t('search_uploader_na', 'N/A');
+                $duration_string = $video_data['duration_string'] ?? _t('search_duration_na', 'N/A');
+
                 $results[] = [
-                    'id' => sanitize_input($video_data['id']),
-                    'title' => sanitize_input($video_data['title'] ?? _t('search_title_na', 'N/A')),
-                    'thumbnail_url' => sanitize_input($video_data['thumbnail'] ?? ($video_data['thumbnails'][0]['url'] ?? '')),
-                    'uploader' => sanitize_input($video_data['uploader'] ?? _t('search_uploader_na', 'N/A')),
-                    'duration_string' => sanitize_input($video_data['duration_string'] ?? _t('search_duration_na', 'N/A')),
-                    'url' => 'https://www.youtube.com/watch?v=' . sanitize_input($video_data['id'])
+                    'id' => sanitize_input($id),
+                    'title' => sanitize_input($title),
+                    'thumbnail_url' => sanitize_input($thumbnail ?? ''), // Sanitize and default to empty if null
+                    'uploader' => sanitize_input($uploader),
+                    'duration_string' => sanitize_input($duration_string),
+                    'url' => 'https://www.youtube.com/watch?v=' . sanitize_input($id)
                 ];
+            } else {
+                // Log line that failed to parse or didn't meet structure requirements
+                error_log("YtDlpWrapper::searchVideos: Failed to parse JSON line or missing 'id'. Error: " . json_last_error_msg() . ". Line: " . $line);
+                continue; // Skip this line
             }
         }
         return $results; // Can be an empty array if no results found, which is not an error if search command succeeded.
