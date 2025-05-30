@@ -1,282 +1,156 @@
 <?php
-    ini_set('display_errors', 1);
-    ini_set('display_startup_errors', 1);
-    error_reporting(E_ALL);
+    require_once __DIR__ . '/config.php';
+    require_once __DIR__ . '/includes/functions.php';
+    
+    $ytDlp = new YtDlpWrapper(); // Instantiate the wrapper
 
-    include("includes/functions.php");
-    include("includes/header.php"); // For consistent UI, will only output if no download
+    // Header is included conditionally later or not at all if direct download.
+    // require_once __DIR__ . '/includes/header.php'; 
 
+    // SECTION: Initial URL validation and sanitization
     if (!isset($_GET['url'])) {
+        // Conditional header/footer for error page display
+        if (!headers_sent()) { require_once __DIR__ . '/includes/header.php'; }
         echo "<main class='container mx-auto mt-8 p-4'><div class='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative' role='alert'>No URL provided.</div></main>";
-        include("includes/footer.php");
+        if (file_exists(__DIR__ . "/includes/footer.php")) { require_once __DIR__ . "/includes/footer.php"; }
         exit;
     }
 
     $url = sanitize_input($_GET['url']);
 
     if (!filter_var($url, FILTER_VALIDATE_URL)) {
+        if (!headers_sent()) { require_once __DIR__ . '/includes/header.php'; }
         echo "<main class='container mx-auto mt-8 p-4'><div class='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative' role='alert'>Invalid URL format.</div></main>";
-        include("includes/footer.php");
+        if (file_exists(__DIR__ . "/includes/footer.php")) { require_once __DIR__ . "/includes/footer.php"; }
         exit;
     }
 
+    // Basic YouTube URL pattern check
     if (!preg_match('/(youtube\.com\/watch\?v=|youtu\.be\/)/', $url)) {
+        if (!headers_sent()) { require_once __DIR__ . '/includes/header.php'; }
         echo "<main class='container mx-auto mt-8 p-4'><div class='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative' role='alert'>Invalid YouTube URL provided. Please use a valid YouTube video link (e.g., youtube.com/watch?v=...).</div></main>";
-        include("includes/footer.php");
+        if (file_exists(__DIR__ . "/includes/footer.php")) { require_once __DIR__ . "/includes/footer.php"; }
         exit;
     }
 
     $validated_url = $url;
+    // END SECTION: Initial URL validation
 
-    // Check for JSON request
+    // SECTION: Handle JSON API request for video info
     if (isset($_GET['json']) && $_GET['json'] == '1' || isset($_GET['ajax']) && $_GET['ajax'] == '1') {
-        $info_command = "yt-dlp -j --skip-download " . escapeshellarg($validated_url);
-        $video_info_json = shell_exec($info_command);
+        $videoDetails = $ytDlp->getFormattableVideoInfo($validated_url); 
 
-        if (!$video_info_json) {
+        if (isset($videoDetails['error'])) {
+            http_response_code(500);
             header('Content-Type: application/json');
-            echo json_encode(['error' => 'Could not retrieve video information. The video may be private, deleted, copyrighted, or the URL is incorrect.']);
+            echo json_encode(['error' => $videoDetails['error']]);
             exit;
         }
-
-        $video_info = json_decode($video_info_json, true);
-
-        if (!$video_info || !isset($video_info['title'])) {
-            header('Content-Type: application/json');
-            echo json_encode(['error' => 'Failed to parse video information. The video data might be malformed.']);
-            exit;
-        }
-
-        $output = [
-            'title' => $video_info['title'],
-            'thumbnail' => $video_info['thumbnail'] ?? ($video_info['thumbnails'][0]['url'] ?? null), // Get first thumbnail if 'thumbnail' key doesn't exist
-            'formats' => []
-        ];
-
-        // Add MP3 option
-        $output['formats'][] = [
-            'format_id' => 'mp3',
-            'ext' => 'mp3',
-            'resolution' => 'Audio',
-            'format_note' => 'MP3 (Best Available Audio)',
-            'description' => 'Audio MP3 (Best Available)',
-            'filesize_approx' => null // Filesize for MP3 is not easily predetermined without conversion
-        ];
-
-        foreach ($video_info['formats'] as $format) {
-            $format_note = $format['format_note'] ?? 'N/A';
-            $resolution = $format['resolution'] ?? ($format['abr'] ? $format['abr'] . 'kbps' : 'Audio');
-            $ext = $format['ext'];
-            $format_id = $format['format_id'];
-            $filesize_approx = isset($format['filesize_approx']) ? round($format['filesize_approx'] / (1024*1024), 2) . " MB" : (isset($format['filesize']) ? round($format['filesize'] / (1024*1024), 2) . " MB" : "N/A");
-            
-            $description = "{$ext} - {$resolution}";
-            if ($format_note !== 'N/A') {
-                $description .= " ({$format_note})";
-            }
-            if ($filesize_approx !== "N/A") {
-                 $description .= " [{$filesize_approx}]";
-            }
-
-
-            // Add common video formats
-            if (strpos($ext, 'mp4') !== false && strpos($resolution, 'x') !== false) { // Video format
-                if (in_array($format_note, ['360p', '480p', '720p', '1080p', '1440p', '2160p'])) {
-                     $output['formats'][] = [
-                        'format_id' => $format_id,
-                        'ext' => $ext,
-                        'resolution' => $resolution,
-                        'format_note' => $format_note,
-                        'description' => "Video {$ext} {$format_note} ({$resolution}) - {$filesize_approx}",
-                        'filesize_approx' => $filesize_approx
-                    ];
-                }
-            } elseif (strpos($format_id, 'm4a') !== false || strpos($ext, 'm4a') !== false) {
-                 $output['formats'][] = [
-                    'format_id' => $format_id,
-                    'ext' => $ext,
-                    'resolution' => $resolution,
-                    'format_note' => $format_note,
-                    'description' => "Audio {$ext} {$resolution} - {$filesize_approx}",
-                    'filesize_approx' => $filesize_approx
-                ];
-            }
-        }
-        
-        // Ensure unique formats by format_id, preferring earlier entries (like our manual MP3)
-        $unique_formats = [];
-        foreach ($output['formats'] as $fmt) {
-            if (!isset($unique_formats[$fmt['format_id']])) {
-                $unique_formats[$fmt['format_id']] = $fmt;
-            }
-        }
-        $output['formats'] = array_values($unique_formats);
-
-
         header('Content-Type: application/json');
-        echo json_encode($output);
+        echo json_encode($videoDetails);
         exit;
     }
-    // End of JSON request check
+    // END SECTION: JSON API request
 
+    // SECTION: Prepare for HTML page display or direct download
+    // Header is included here for non-JSON requests if not a direct download yet.
+    // If it's a direct download (format_id is set), header output is suppressed until/unless an error occurs.
+    if (!isset($_GET['format_id'])) { 
+        require_once __DIR__ . '/includes/header.php';
+    }
+
+    // SECTION: Handle direct media download
     if (isset($_GET['format_id'])) {
         $format_id = sanitize_input($_GET['format_id']);
-        // Fetch title again for the download, or ideally, pass it through
-        // For now, let's re-fetch, though this is inefficient
-        $info_command = "yt-dlp -j --skip-download " . escapeshellarg($validated_url);
-        $video_info_json = shell_exec($info_command);
         
-        if (!$video_info_json) {
-            // Error: Could not execute yt-dlp or video not found
-            // Since this is inside format_id check, we assume URL was valid before
-            // This might happen if video becomes unavailable between page loads
-            header("HTTP/1.1 500 Internal Server Error");
-            echo "<main class='container mx-auto mt-8 p-4'><div class='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative' role='alert'>Error: Could not re-fetch video information for download.</div></main>";
-            include("includes/footer.php");
+        $video_data = $ytDlp->getVideoInfo($validated_url);
+
+        // If fetching video info for title/extension fails, display error page
+        if (isset($video_data['error']) || !isset($video_data['title'])) {
+            ob_start(); 
+            if (!headers_sent()) { // Ensure header is loaded for error messages if not already sent
+                 require_once __DIR__ . "/includes/header.php";
+            }
+            $error_message_display = isset($video_data['error']) ? $video_data['error'] : _t('error_fetch_video_info_download', 'Error: Could not re-fetch video information for download.');
+            echo "<main class='container mx-auto mt-8 p-4'><div class='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative' role='alert'>".htmlspecialchars($error_message_display)."</div></main>";
+            if (file_exists(__DIR__ . "/includes/footer.php")) {
+                require_once __DIR__ . "/includes/footer.php";
+            }
+            if(ob_get_level() > 0) ob_end_flush(); // Flush buffered output
             exit;
         }
+        
+        $video_title = $video_data['title'];
+        $original_extension = 'mp4'; // Default extension
 
-        $video_info = json_decode($video_info_json, true);
-
-        if (!$video_info || !isset($video_info['title'])) {
-            header("HTTP/1.1 500 Internal Server Error");
-            echo "<main class='container mx-auto mt-8 p-4'><div class='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative' role='alert'>Error: Could not parse video information for download.</div></main>";
-            include("includes/footer.php");
-            exit;
-        }
-        $video_title = $video_info['title'];
-        $original_extension = 'mp4'; // Default
-
-        // Determine extension
-        foreach ($video_info['formats'] as $format) {
-            if ($format['format_id'] === $format_id) {
-                $original_extension = $format['ext'];
-                break;
+        // Determine the correct extension from format data if not MP3
+        if ($format_id !== 'mp3' && isset($video_data['formats']) && is_array($video_data['formats'])) {
+            foreach ($video_data['formats'] as $format_entry) {
+                if (isset($format_entry['format_id']) && $format_entry['format_id'] === $format_id && isset($format_entry['ext'])) {
+                    $original_extension = $format_entry['ext'];
+                    break;
+                }
             }
         }
         
-        // Special handling for audio download request
-        $download_command = "";
-        $final_extension = $original_extension;
-
-        if ($format_id === 'mp3') {
-            $download_command = "yt-dlp -f bestaudio -x --audio-format mp3 -o - " . escapeshellarg($validated_url);
-            $final_extension = 'mp3';
-        } else {
-            $download_command = "yt-dlp -f " . escapeshellarg($format_id) . " -o - " . escapeshellarg($validated_url);
-        }
-
-        // Clean up title for filename
-        $filename_title = preg_replace('/[^A-Za-z0-9_\-]/', '_', $video_title);
-        $filename = $filename_title . '.' . $final_extension;
-
-        header('Content-Type: application/octet-stream');
-        header('Content-Disposition: attachment; filename="' . $filename . '"');
-        header('Content-Transfer-Encoding: binary');
-        header('Expires: 0');
-        header('Cache-Control: must-revalidate');
-        header('Pragma: public');
-        // Ensure no output before passthru
-        ob_end_flush(); // End output buffering if any was started by header.php
-
-        passthru($download_command);
-        exit;
-
+        // Stream the media
+        $ytDlp->streamMedia($validated_url, $format_id, $video_title, $original_extension);
+        exit; 
+    // END SECTION: Direct media download
+    
     } else {
-        // PHP part that lists formats (HTML fallback)
-        echo '<div id="php-format-list">';
-        // Fetch and display format options
-        $info_command = "yt-dlp -j --skip-download " . escapeshellarg($validated_url);
-        $video_info_json = shell_exec($info_command);
+        // SECTION: HTML Fallback Mode (display available formats on page)
+        $videoDetailsForHtml = $ytDlp->getFormattableVideoInfo($validated_url);
 
-        if (!$video_info_json) {
-            echo "<main class='container mx-auto mt-8 p-4'><div class='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative' role='alert'>Could not retrieve video information. The video may be private, deleted, copyrighted, or the URL is incorrect.</div></main>";
-            include("includes/footer.php");
-            exit;
-        }
+        echo '<div id="php-format-list">'; // Container for JS to potentially interact with
 
-        $video_info = json_decode($video_info_json, true);
-
-        if (!$video_info || !isset($video_info['title'])) {
-            echo "<main class='container mx-auto mt-8 p-4'><div class='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative' role='alert'>Failed to parse video information. The video data might be malformed.</div></main>";
-            include("includes/footer.php");
-            exit;
-        }
-
-        $video_title = htmlspecialchars($video_info['title']);
+        if (isset($videoDetailsForHtml['error']) || !isset($videoDetailsForHtml['title'])) {
+            // Display error if video info fetching failed
+            echo "<main class='container mx-auto mt-8 p-4'><div class='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative' role='alert'>" . htmlspecialchars(isset($videoDetailsForHtml['error']) ? $videoDetailsForHtml['error'] : _t('error_retrieve_video_info', 'Could not retrieve video information.')) . "</div></main>";
+        } else {
+            // Display video details and format list
+            $video_title_html = htmlspecialchars($videoDetailsForHtml['title']);
+            $thumbnail_html = isset($videoDetailsForHtml['thumbnail_url']) ? htmlspecialchars($videoDetailsForHtml['thumbnail_url']) : '';
         ?>
         <main class="container mx-auto mt-8 p-4">
             <div class="bg-white shadow-lg rounded-lg p-6">
-                <h1 class="text-2xl font-bold text-gray-800 mb-2">Download Video: <?php echo $video_title; ?></h1>
-                <img src="<?php echo htmlspecialchars($video_info['thumbnail'] ?? ''); ?>" alt="Video Thumbnail" class="my-4 rounded-lg" style="max-width:320px; margin-left:auto; margin-right:auto;">
-                <h2 class="text-xl font-semibold text-gray-700 mb-4">Available Formats:</h2>
+                <h1 class="text-2xl font-bold text-gray-800 mb-2"><?php echo _t('download_video_title_page', 'Download Video: {title}', ['title' => $video_title_html]); ?></h1>
+                <?php if ($thumbnail_html): ?>
+                <img src="<?php echo $thumbnail_html; ?>" alt="<?php echo htmlspecialchars(_t('video_thumbnail_alt', 'Video Thumbnail')); ?>" class="my-4 rounded-lg shadow-md" style="max-width:320px; margin-left:auto; margin-right:auto;">
+                <?php endif; ?>
+                <h2 class="text-xl font-semibold text-gray-700 mb-4"><?php echo htmlspecialchars(_t('available_formats_title', 'Available Formats:')); ?></h2>
                 <ul class="space-y-3">
                     <?php
-                    $found_mp4 = false;
-                    $found_audio = false;
-
-                    // Offer MP3 download option
-                    echo '<li class="p-3 bg-gray-50 rounded-md shadow-sm hover:bg-gray-100 transition duration-150">';
-                    echo '<a href="download.php?url=' . urlencode($validated_url) . '&format_id=mp3" class="block text-blue-600 hover:text-blue-800">';
-                    echo '<strong>Audio:</strong> MP3 (Best Available Audio)';
-                    echo '<span class="text-sm text-gray-500 block">Download as MP3</span>';
-                    echo '</a></li>';
-                    $found_audio = true;
-
-
-                    foreach ($video_info['formats'] as $format) {
-                        $format_note = isset($format['format_note']) ? htmlspecialchars($format['format_note']) : 'N/A';
-                        $resolution = isset($format['resolution']) ? htmlspecialchars($format['resolution']) : 'Audio';
-                        $ext = htmlspecialchars($format['ext']);
-                        $format_id = htmlspecialchars($format['format_id']);
-                        $filesize_approx = isset($format['filesize_approx']) ? round($format['filesize_approx'] / (1024*1024), 2) . " MB" : (isset($format['filesize']) ? round($format['filesize'] / (1024*1024), 2) . " MB" : "N/A");
-
-
-                        // Prioritize MP4 videos and common audio like M4A
-                        if (strpos($ext, 'mp4') !== false && strpos($resolution, 'x') !== false) { // Video format
-                             if (in_array($format_note, ['360p', '480p', '720p', '1080p'])) {
-                                echo '<li class="p-3 bg-gray-50 rounded-md shadow-sm hover:bg-gray-100 transition duration-150">';
-                                echo '<a href="download.php?url=' . urlencode($validated_url) . '&format_id=' . urlencode($format_id) . '" class="block text-blue-600 hover:text-blue-800">';
-                                echo "<strong>Video:</strong> {$resolution} ({$format_note}) - {$ext} ({$filesize_approx})";
-                                echo "<span class='text-sm text-gray-500 block'>ID: {$format_id}</span>";
-                                echo '</a></li>';
-                                $found_mp4 = true;
-                             }
-                        }
-                    }
-
-                    if (!$found_mp4 && !$found_audio) {
-                        echo "<li class='text-gray-500'>No suitable MP4 video or M4A/MP3 audio formats found. You can check all available formats below.</li>";
-                    }
-
-                    // Fallback: List all formats if no specific ones were found or for debugging
-                    if (empty($video_info['formats'])) {
-                         echo "<li class='text-gray-500'>No download formats listed by yt-dlp.</li>";
-                    } else if (!$found_mp4 && !$found_audio){ // Only show all if specific ones not found
-                        echo "<h3 class='text-lg font-semibold text-gray-700 mt-6 mb-3'>All Available Formats (for advanced users):</h3>";
-                        foreach ($video_info['formats'] as $format) {
-                            $description = isset($format['format']) ? htmlspecialchars($format['format']) : $format['format_id'];
-                            $ext = htmlspecialchars($format['ext']);
-                            $format_id = htmlspecialchars($format['format_id']);
-                            $filesize_approx = isset($format['filesize_approx']) ? round($format['filesize_approx'] / (1024*1024), 2) . " MB" : (isset($format['filesize']) ? round($format['filesize'] / (1024*1024), 2) . " MB" : "N/A");
+                    if (!empty($videoDetailsForHtml['formats'])) {
+                        foreach ($videoDetailsForHtml['formats'] as $format) {
+                            $format_label_html = htmlspecialchars($format['label']);
+                            $format_id_html = htmlspecialchars($format['id']);
+                            $download_link = 'download.php?url=' . urlencode($validated_url) . '&format_id=' . urlencode($format_id_html);
+                            
+                            $file_details = htmlspecialchars($format['ext'] . (isset($format['resolution']) && $format['resolution'] !== 'Audio' ? ' - ' . $format['resolution'] : '') . (isset($format['filesize_approx_str']) ? ' - ' . $format['filesize_approx_str'] : ''));
 
                             echo '<li class="p-3 bg-gray-50 rounded-md shadow-sm hover:bg-gray-100 transition duration-150">';
-                            echo '<a href="download.php?url=' . urlencode($validated_url) . '&format_id=' . urlencode($format_id) . '" class="block text-blue-600 hover:text-blue-800">';
-                            echo "{$description} - {$ext} ({$filesize_approx})";
+                            echo '<a href="' . htmlspecialchars($download_link) . '" class="block text-blue-600 hover:text-blue-800">';
+                            echo '<strong>' . $format_label_html . '</strong>';
+                            echo '<span class="text-sm text-gray-500 block">' . $file_details . '</span>';
                             echo '</a></li>';
                         }
+                    } else {
+                        echo "<li class='text-gray-500'>".htmlspecialchars(_t('no_suitable_formats_html', 'No suitable download formats found for this video.'))."</li>";
                     }
                     ?>
                 </ul>
             </div>
         </main>
         <?php
+        } // Closing else for $videoDetailsForHtml check
         echo '</div>'; // End of #php-format-list
-    } // End of else (format_id not set)
+    } // END SECTION: HTML Fallback Mode
 
-    // Footer should be included only if not a JSON request and not a direct file download
+    // SECTION: Footer inclusion for HTML pages
+    // Footer should be included only if not a JSON request and not a direct file download (where script exits earlier)
     if (!(isset($_GET['json']) && $_GET['json'] == '1') && !(isset($_GET['ajax']) && $_GET['ajax'] == '1') && !isset($_GET['format_id'])) {
-        include("includes/footer.php");
+        if (file_exists(__DIR__ . "/includes/footer.php")) { require_once __DIR__ . "/includes/footer.php"; }
     } elseif (isset($_GET['format_id'])) {
         // If it's a download request, the script exits earlier, but as a fallback:
         // No footer output during direct download.

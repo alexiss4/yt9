@@ -1,3 +1,8 @@
+/**
+ * Main script for handling frontend interactions for the YouTube Downloader.
+ * This includes AJAX form submissions for video URL/search, dynamic loading of
+ * video formats on download pages, and displaying results/errors.
+ */
 document.addEventListener('DOMContentLoaded', () => {
     const mainElement = document.querySelector('main');
     const isDownloadPage = window.location.pathname.includes('download.php');
@@ -5,6 +10,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const videoUrlDL = urlParamsDL.get('url');
 
     // --- Helper Functions ---
+
+    /**
+     * Creates and displays an error message within a specified container.
+     * @param {string} message - The error message to display.
+     * @param {HTMLElement} container - The HTML element to display the error message in.
+     */
     function createErrorMessage(message, container) {
         container.innerHTML = `<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative text-center" role="alert">
                                 <strong class="font-bold">Error:</strong>
@@ -12,6 +23,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>`;
     }
 
+    /**
+     * Creates and displays a loading message with a spinner within a specified container.
+     * @param {string} message - The loading message to display.
+     * @param {HTMLElement} container - The HTML element to display the loading message in.
+     */
     function createLoadingMessage(message, container) {
         container.innerHTML = `<div class="flex items-center justify-center text-gray-600 py-4">
                                 <svg class="animate-spin h-5 w-5 mr-3 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -23,16 +39,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Logic for download.php (Dynamic Format Loading) ---
+    /**
+     * Handles dynamic loading of video formats on the download.php page.
+     * If on download.php and a URL is provided, it fetches format info via AJAX.
+     */
     if (isDownloadPage && videoUrlDL && mainElement) {
         const phpFormatList = document.getElementById('php-format-list');
-        if (phpFormatList) phpFormatList.style.display = 'none';
+        if (phpFormatList) phpFormatList.style.display = 'none'; // Hide static list if JS active
 
         let dlContainer = document.getElementById('download-options-container');
-        if (!dlContainer) {
+        if (!dlContainer) { // Create container if not present in static HTML (fallback)
             dlContainer = document.createElement('div');
             dlContainer.id = 'download-options-container';
-            dlContainer.className = 'bg-white shadow-lg rounded-lg p-6';
-            mainElement.appendChild(dlContainer);
+            dlContainer.className = 'bg-white shadow-lg rounded-lg p-6'; // Apply some default styling
+            // Try to insert it before the footer or append to main
+            const footer = document.querySelector('footer');
+            if (footer) {
+                mainElement.insertBefore(dlContainer, footer);
+            } else {
+                mainElement.appendChild(dlContainer);
+            }
         }
         createLoadingMessage('Loading video formats...', dlContainer);
 
@@ -47,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(data => {
                 dlContainer.innerHTML = ''; 
                 if (data.error) throw new Error(data.error);
-                displayVideoDownloadOptions(data, videoUrlDL, dlContainer, false); // isSearchContext = false
+                displayVideoDownloadOptions(data, videoUrlDL, dlContainer, true); // isDownloadPageContext = true
             })
             .catch(error => {
                 console.error('Error fetching video info for download.php:', error);
@@ -55,15 +81,37 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
-    // --- Logic for index.php (AJAX Form Submission: URL or Search) ---
-    const videoUrlForm = document.getElementById('video-url-form');
+    // --- Logic for index.php and other pages with video URL form (AJAX Form Submission: URL or Search) ---
+    const videoUrlForm = document.getElementById('video-url-form') || 
+                         document.getElementById('video-url-form-mp3') || 
+                         document.getElementById('video-url-form-mp4');
+                         // Thumbnail page form ('video-url-form-thumbnail') is not handled by AJAX here, it uses standard POST.
+
     if (videoUrlForm) {
-        const videoInfoContainer = document.getElementById('video-info-container');
+        // Determine container based on form ID or a generic one
+        let videoInfoContainer;
+        if (videoUrlForm.id === 'video-url-form-mp3') {
+            videoInfoContainer = document.getElementById('conversion-results-container');
+        } else if (videoUrlForm.id === 'video-url-form-mp4') {
+            videoInfoContainer = document.getElementById('conversion-results-container-mp4');
+        } else { // Default for index.php
+            videoInfoContainer = document.getElementById('video-info-container');
+        }
+
         const urlInput = videoUrlForm.querySelector('input[name="url"]');
         const submitButton = videoUrlForm.querySelector('button[type="submit"]');
 
+        /**
+         * Handles the submission of the main video URL form (index.php, mp3, mp4 pages).
+         * It determines if the input is a URL or a search query and calls the appropriate function.
+         * @param {Event} event - The form submission event.
+         */
         videoUrlForm.addEventListener('submit', (event) => {
             event.preventDefault();
+            if (!videoInfoContainer) { // Ensure container exists
+                console.error("Video info container not found for form:", videoUrlForm.id);
+                return;
+            }
             const inputValue = urlInput.value.trim();
             const originalButtonText = submitButton.innerHTML;
 
@@ -78,22 +126,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            // Regex to identify YouTube video URLs
             const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|shorts\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
             const isUrl = youtubeRegex.test(inputValue);
 
             if (isUrl) {
                 fetchVideoInfo(inputValue, videoInfoContainer, submitButton, originalButtonText);
             } else {
-                searchVideos(inputValue, videoInfoContainer, submitButton, originalButtonText);
+                // Only perform search if on index.php (video-url-form)
+                if (videoUrlForm.id === 'video-url-form') {
+                    searchVideos(inputValue, videoInfoContainer, submitButton, originalButtonText);
+                } else {
+                    createErrorMessage('Invalid YouTube URL. Please enter a valid video link for conversion.', videoInfoContainer);
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalButtonText;
+                }
             }
         });
     }
 
+    /**
+     * Fetches video information (title, thumbnail, formats) from the API for a given YouTube URL.
+     * @param {string} videoUrl - The YouTube video URL.
+     * @param {HTMLElement} container - The HTML element to display results or errors.
+     * @param {HTMLElement|null} button - The submit button element (optional, for disabling/reenabling).
+     * @param {string|null} originalButtonText - The original text of the submit button (optional).
+     */
     function fetchVideoInfo(videoUrl, container, button, originalButtonText) {
         createLoadingMessage('Fetching video information...', container);
         fetch(`api.php?action=getVideoInfo&url=${encodeURIComponent(videoUrl)}`)
             .then(response => {
-                if (button) { // Button might not exist if called from search result click
+                if (button) { 
                     button.disabled = false;
                     button.innerHTML = originalButtonText;
                 }
@@ -104,25 +167,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 return response.json();
             })
             .then(data => {
-                container.innerHTML = '';
+                container.innerHTML = ''; // Clear loading message
                 if (data.error) throw new Error(data.error);
-                displayVideoDownloadOptions(data, videoUrl, container, false); // isSearchContext = false
+                displayVideoDownloadOptions(data, videoUrl, container, false); // isDownloadPageContext = false
             })
             .catch(error => {
                 console.error('Error fetching video info via API:', error);
                 createErrorMessage(error.message || 'Could not load video information. Please try again.', container);
-                if (button) {
+                if (button) { // Ensure button is re-enabled on error too
                     button.disabled = false;
                     button.innerHTML = originalButtonText;
                 }
             });
     }
 
+    /**
+     * Performs a video search using the API based on a query.
+     * Displays search results or an error message.
+     * @param {string} query - The search query.
+     * @param {HTMLElement} container - The HTML element to display search results or errors.
+     * @param {HTMLElement} button - The submit button element.
+     * @param {string} originalButtonText - The original text of the submit button.
+     */
     function searchVideos(query, container, button, originalButtonText) {
         createLoadingMessage(`Searching for "${query}"...`, container);
         fetch(`api.php?action=searchVideos&query=${encodeURIComponent(query)}`)
             .then(response => {
-                if (button) {
+                if (button) { // Re-enable button once response starts
                      button.disabled = false;
                      button.innerHTML = originalButtonText;
                 }
@@ -133,8 +204,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 return response.json();
             })
             .then(data => {
-                container.innerHTML = '';
-                if (data.error) throw new Error(data.error);
+                container.innerHTML = ''; // Clear loading/previous results
+                if (data.error) throw new Error(data.error); // API returned an error object
 
                 if (data.results && data.results.length > 0) {
                     const searchResultsTitle = document.createElement('h3');
@@ -144,9 +215,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     data.results.forEach(video => {
                         const videoElement = document.createElement('div');
+                        // Styling for each search result item
                         videoElement.className = 'p-4 mb-4 border rounded-lg flex flex-col sm:flex-row items-start sm:space-x-4 shadow-md hover:shadow-lg transition-shadow';
                         
-                        const thumbnail = `<img src="${video.thumbnail}" alt="Thumbnail for ${video.title}" class="w-full sm:w-40 sm:h-24 object-cover rounded mb-3 sm:mb-0">`;
+                        const thumbnail = `<img src="${video.thumbnail_url}" alt="Thumbnail for ${video.title}" class="w-full sm:w-40 sm:h-24 object-cover rounded mb-3 sm:mb-0">`;
                         
                         const detailsDiv = document.createElement('div');
                         detailsDiv.className = 'flex-grow';
@@ -156,55 +228,67 @@ document.addEventListener('DOMContentLoaded', () => {
                             <p class="text-sm text-gray-500">Duration: ${video.duration_string || 'N/A'}</p>
                         `;
 
+                        // "Get Download Links" button for each search result
                         const getFormatsBtn = document.createElement('button');
                         getFormatsBtn.className = 'get-formats-btn mt-3 py-2 px-4 bg-green-500 text-white rounded hover:bg-green-600 transition duration-150 text-sm';
                         getFormatsBtn.textContent = 'Get Download Links';
-                        getFormatsBtn.dataset.videoUrl = video.url; // video.url is already a full URL
-                        getFormatsBtn.dataset.videoTitle = video.title; // Pass title for context
-                        getFormatsBtn.dataset.videoThumbnail = video.thumbnail; // Pass thumbnail
+                        getFormatsBtn.dataset.videoUrl = video.url; 
+                        // Store other details if needed for displayVideoDownloadOptions context, though not strictly used by fetchVideoInfo
+                        getFormatsBtn.dataset.videoTitle = video.title; 
+                        getFormatsBtn.dataset.videoThumbnail = video.thumbnail_url;
 
                         detailsDiv.appendChild(getFormatsBtn);
-                        videoElement.innerHTML = thumbnail; // Add thumbnail first
-                        videoElement.appendChild(detailsDiv); // Then add details
+                        videoElement.innerHTML = thumbnail; 
+                        videoElement.appendChild(detailsDiv); 
                         container.appendChild(videoElement);
                     });
 
-                    addFormatButtonListeners();
+                    addFormatButtonListeners(); // Add listeners to the newly created buttons
                 } else {
+                    // Handle no results found
                     container.innerHTML = '<p class="text-gray-600 text-center py-4">No videos found for your query. Please try different keywords.</p>';
                 }
             })
-            .catch(error => {
+            .catch(error => { // Catch network errors or errors thrown from .then()
                 console.error('Error fetching search results:', error);
                 createErrorMessage(error.message || 'Could not perform search. Please try again.', container);
-                 if (button) {
+                 if (button) { // Ensure button is re-enabled on error
                     button.disabled = false;
                     button.innerHTML = originalButtonText;
                 }
             });
     }
 
+    /**
+     * Adds event listeners to "Get Download Links" buttons generated after a search.
+     * When clicked, these buttons will fetch and display download options for the respective video.
+     */
     function addFormatButtonListeners() {
         document.querySelectorAll('.get-formats-btn').forEach(button => {
             button.addEventListener('click', (event) => {
                 const videoUrl = event.target.dataset.videoUrl;
-                // For now, just re-use videoInfoContainer from index.php. 
-                // This assumes search results are always cleared before showing formats.
+                // Re-use the main video info container from index.php to display formats.
+                // This implies search results will be cleared.
                 const videoInfoContainer = document.getElementById('video-info-container'); 
                 if (videoUrl && videoInfoContainer) {
-                    // No button/originalButtonText for these calls as the primary form button isn't involved
+                    // Call fetchVideoInfo without button context as the main form's button isn't involved here.
                     fetchVideoInfo(videoUrl, videoInfoContainer, null, null); 
                 } else {
-                    console.error("Could not find video URL or container for format fetching.");
+                    console.error("Could not find video URL or container for format fetching from search result.");
                     if(videoInfoContainer) createErrorMessage("Could not retrieve video URL to fetch formats.", videoInfoContainer);
                 }
             });
         });
     }
     
-    // Reusable function to display video title, thumbnail, and download format options
-    // isSearchContext helps decide if we should show a "Back to search results" or similar if needed (not implemented yet)
-    function displayVideoDownloadOptions(data, videoUrl, container, isSearchContext = false) {
+    /**
+     * Displays video title, thumbnail, and download format options in a specified container.
+     * @param {object} data - The video information object from the API (should include title, thumbnail_url, formats).
+     * @param {string} videoUrl - The original YouTube video URL (for generating download links).
+     * @param {HTMLElement} container - The HTML element to display the information in.
+     * @param {boolean} isDownloadPageContext - True if called from download.php, false if from index.php (search/direct URL). Affects styling.
+     */
+    function displayVideoDownloadOptions(data, videoUrl, container, isDownloadPageContext = false) {
         // Clear previous content in the specific container
         container.innerHTML = ''; 
 
