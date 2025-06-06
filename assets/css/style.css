@@ -1,0 +1,90 @@
+/* Ensure vertical alignment of image and text in the language switcher button and dropdown items */
+#language-switcher button img,
+#language-dropdown a img {
+    vertical-align: middle; /* Ensures image aligns well with text */
+}
+
+/* Optional: Style for the dropdown if it becomes very long */
+#language-dropdown {
+    max-height: 300px; /* Adjust as needed */
+    overflow-y: auto;  /* Add scroll if content exceeds max-height */
+}
+
+/* Ensure images within the language switcher do not exceed their container's dimensions
+   and maintain aspect ratio, specifically for the small logos.
+   Tailwind's w-5 (width) and h-auto (height auto) should mostly handle this,
+   but explicit rules can prevent issues. */
+#language-switcher img {
+    max-width: 100%; /* Ensure image is not wider than its container */
+    height: auto;    /* Maintain aspect ratio */
+    display: inline-block; /* Aligns better with text if not already flexed */
+}
+
+/* Minor adjustment for spacing if needed - Tailwind mr-2 is generally good */
+/* #language-switcher button img,
+#language-dropdown a img {
+    margin-right: 0.5rem; /* Tailwind's mr-2 */
+} */
+
+
+#convert-section p {
+    /* color: #555; */ /* Adjust if text-gray-600 is not the exact match */
+}
+
+/* assets/css/style.css */
+.table-cell { /* This is a general one, potentially overridden by more specific .table-container .table-cell */
+    padding: 0.75rem;
+    border: 1px solid #E5E7EB; /* Corresponds to Tailwind's border-gray-200 or similar */
+    text-align: center;
+}
+.icon {
+    font-size: 1.25rem; /* Corresponds to Tailwind's text-xl */
+    margin-right: 0.25rem; /* Corresponds to Tailwind's mr-1 */
+    vertical-align: middle; /* For better alignment with text */
+}
+.muted-icon {
+    color: #EF4444; /* Red color for volume_off icon, as per user mockup */
+}
+/* Basic styling for download buttons if needed beyond Tailwind classes applied in JS.
+   The JS primarily uses Tailwind for button appearance (bg-color, text color, padding etc). */
+.download-button {
+    display: inline-flex; /* Ensures icon and text align well */
+    align-items: center;
+    justify-content: center;
+    text-decoration: none; /* Ensure links styled as buttons don't have underlines */
+}
+
+/* Styles for the new format display tables */
+.table-container table { /* Target tables within the new UI specifically */
+    border-collapse: collapse; /* Good default for tables */
+    width: 100%;
+    margin-top: 0.5rem; /* Add some space above tables */
+    margin-bottom: 0.5rem; /* Add some space below tables */
+}
+
+.table-container .table-cell { /* More specific selector for cells within .table-container */
+    padding: 0.5rem 0.75rem; /* p-2 px-3 equivalent */
+    border: 1px solid #e5e7eb; /* border-gray-200/300 equivalent */
+    /* text-align is better handled by Tailwind classes in JS (text-left, text-center, text-right) */
+}
+
+/* For icons specifically within download buttons, if they need different sizing */
+.download-button .icon {
+    font-size: 1.0rem; /* text-base, slightly smaller to fit buttons better */
+    /* margin-right is already handled if the span has mr-1 from JS (which it does) */
+}
+
+/* Animation helper for the content wrapper, if controlled by class */
+/* The JS currently applies these styles directly, but classes are a good alternative */
+.content-wrapper-hidden {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.6s ease-out;
+}
+
+.content-wrapper-visible {
+    /* max-height will be set by JS to scrollHeight via direct style manipulation.
+       If using classes, you'd set max-height here or via JS when adding the class. */
+    overflow: hidden; /* Keep hidden during transition, then can be set to visible/auto by JS if needed */
+    transition: max-height 0.6s ease-out;
+}
