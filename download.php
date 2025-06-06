@@ -125,11 +125,11 @@ if (isset($_GET['format_id'])) {
     ?>
     <main class="container mx-auto mt-8 p-4">
         <div class="bg-white shadow-lg rounded-lg p-6">
-            <h1 class="text-2xl font-bold text-gray-800 mb-2"><?php echo _t('download_video_title_page', 'Download Video: {title}', ['title' => $video_title_html]); ?></h1>
+            <h1 class="text-2xl font-bold text-slate-800 mb-2"><?php echo _t('download_video_title_page', 'Download Video: {title}', ['title' => $video_title_html]); ?></h1>
             <?php if ($thumbnail_html): ?>
             <img src="<?php echo $thumbnail_html; ?>" alt="<?php echo htmlspecialchars(_t('video_thumbnail_alt', 'Video Thumbnail')); ?>" class="my-4 rounded-lg shadow-md" style="max-width:320px; margin-left:auto; margin-right:auto;">
             <?php endif; ?>
-            <h2 class="text-xl font-semibold text-gray-700 mb-4"><?php echo htmlspecialchars(_t('available_formats_title', 'Available Formats:')); ?></h2>
+            <h2 class="text-xl font-semibold text-slate-700 mb-4"><?php echo htmlspecialchars(_t('available_formats_title', 'Available Formats:')); ?></h2>
             <ul class="space-y-3">
                 <?php
                 if (!empty($videoDetailsForHtml['formats'])) {
@@ -141,7 +141,7 @@ if (isset($_GET['format_id'])) {
                         $file_details = htmlspecialchars($format['ext'] . (isset($format['resolution']) && $format['resolution'] !== 'Audio' ? ' - ' . $format['resolution'] : '') . (isset($format['filesize_approx_str']) ? ' - ' . $format['filesize_approx_str'] : ''));
 
                         echo '<li class="p-3 bg-gray-50 rounded-md shadow-sm hover:bg-gray-100 transition duration-150">';
-                        echo '<a href="' . htmlspecialchars($download_link) . '" class="block text-blue-600 hover:text-blue-800">';
+                        echo '<a href="' . htmlspecialchars($download_link) . '" class="block text-sky-600 hover:text-sky-700">';
                         echo '<strong>' . $format_label_html . '</strong>';
                         echo '<span class="text-sm text-gray-500 block">' . $file_details . '</span>';
                         echo '</a></li>';

@@ -18,16 +18,16 @@
         }
     </style>
 </head>
-<body class="bg-blue-50">
+<body class="bg-slate-50">
 <header class="bg-white shadow-md">
 <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
-<a class="text-2xl font-bold text-blue-600" href="index.php">ytid.com</a> <div class="flex items-center space-x-4">
-<a class="text-gray-600 hover:text-blue-600" href="index.php"><?php echo _t('nav_home', 'YouTube Downloader'); ?></a>
-<a class="text-gray-600 hover:text-blue-600" href="youtube-to-mp3.php"><?php echo _t('nav_yt_to_mp3', 'YouTube To Mp3'); ?></a>
-<a class="text-gray-600 hover:text-blue-600" href="youtube-to-mp4.php"><?php echo _t('nav_yt_to_mp4', 'YouTube To Mp4'); ?></a>
-<a class="text-gray-600 hover:text-blue-600" href="youtube-thumbnail-downloader.php"><?php echo _t('nav_thumb_downloader', 'Thumbnail Downloader'); ?></a>
+<a class="text-2xl font-bold text-sky-600" href="index.php">ytid.com</a> <div class="flex items-center space-x-4">
+<a class="text-slate-600 hover:text-sky-600" href="index.php"><?php echo _t('nav_home', 'YouTube Downloader'); ?></a>
+<a class="text-slate-600 hover:text-sky-600" href="youtube-to-mp3.php"><?php echo _t('nav_yt_to_mp3', 'YouTube To Mp3'); ?></a>
+<a class="text-slate-600 hover:text-sky-600" href="youtube-to-mp4.php"><?php echo _t('nav_yt_to_mp4', 'YouTube To Mp4'); ?></a>
+<a class="text-slate-600 hover:text-sky-600" href="youtube-thumbnail-downloader.php"><?php echo _t('nav_thumb_downloader', 'Thumbnail Downloader'); ?></a>
 <div class="relative" id="language-switcher">
-        <button class="text-gray-600 hover:text-blue-600 flex items-center" onclick="document.getElementById('language-dropdown').classList.toggle('hidden');">
+        <button class="text-slate-600 hover:text-sky-600 flex items-center">
             <img src="assets/images/country_logos/<?php echo htmlspecialchars($language_logos[$current_language]); ?>" alt="<?php echo htmlspecialchars($available_languages[$current_language]); ?>" class="w-5 h-auto mr-2">
             <?php echo htmlspecialchars($available_languages[$current_language]); ?>
             <span class="material-icons text-sm ml-1">expand_more</span>
@@ -35,7 +35,7 @@
         <div id="language-dropdown" class="absolute right-0 mt-2 py-2 w-48 bg-white rounded-md shadow-xl z-20 hidden">
             <?php foreach ($available_languages as $lang_code => $lang_name): ?>
                 <?php if ($lang_code !== $current_language): ?>
-                    <a href="?lang=<?php echo htmlspecialchars($lang_code); ?>" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-500 hover:text-white">
+                    <a href="?lang=<?php echo htmlspecialchars($lang_code); ?>" class="block px-4 py-2 text-sm text-slate-700 hover:bg-sky-600 hover:text-white">
                         <img src="assets/images/country_logos/<?php echo htmlspecialchars($language_logos[$lang_code]); ?>" alt="<?php echo htmlspecialchars($lang_name); ?>" class="w-5 h-auto mr-2 inline-block">
                         <?php echo htmlspecialchars($lang_name); ?>
                     </a>
@@ -44,21 +44,5 @@
         </div>
     </div>
 </div>
-<script>
-        const langSwitcherButton = document.querySelector('#language-switcher button');
-        const langDropdown = document.getElementById('language-dropdown');
-
-        // Toggle dropdown
-        // langSwitcherButton.addEventListener('click', () => { // Commented out as onclick is on the button
-        //     langDropdown.classList.toggle('hidden');
-        // });
-
-        // Close dropdown if clicked outside
-        window.addEventListener('click', function(e) {
-            if (!langSwitcherButton.contains(e.target) && !langDropdown.contains(e.target)) {
-                langDropdown.classList.add('hidden');
-            }
-        });
-    </script>
 </nav>
 </header>
