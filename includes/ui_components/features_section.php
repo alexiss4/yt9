@@ -15,7 +15,7 @@
 
 // includes/ui_components/features_section.php
 if (empty($features_list) || !is_array($features_list)) {
-    return; 
+    return;
 }
 $grid_cols_class = $grid_cols_class ?? 'md:grid-cols-3';
 ?>

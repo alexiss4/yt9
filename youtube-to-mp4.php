@@ -1,6 +1,6 @@
 <?php 
     require_once __DIR__ . '/config.php';
-    require_once __DIR__ . '/includes/header.php'; 
+    require_once __DIR__ . '/includes/header.php';
 ?>
 <main>
     <section class="bg-gradient-to-b from-blue-100 to-blue-50 py-16">
@@ -9,19 +9,19 @@
                 <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4"><?php echo _t('yt_to_mp4_title', 'YouTube To Mp4 Converter'); ?></h1>
                 <p class="text-gray-600 mb-8"><?php echo _t('yt_to_mp4_description', 'Download and convert YouTube videos to MP4 format in various resolutions.'); ?></p>
                 <?php
-                $form_id = 'video-url-form-mp4'; 
+                $form_id = 'video-url-form-mp4';
                 $input_placeholder = _t('enter_youtube_url_placeholder', 'Paste YouTube video link here');
                 $button_text = _t('convert_to_mp4_button', 'Convert to MP4');
                 $button_icon = 'smart_display';
-                require __DIR__ . '/includes/ui_components/video_form.php'; 
+                require __DIR__ . '/includes/ui_components/video_form.php';
                 ?>
+                <!-- Moved results container inside and added 'hidden' class -->
+                <div id="conversion-results-container-mp4" class="mt-8 hidden">
+                    <?php // Placeholder for MP4 conversion results, download links, quality options etc. ?>
+                </div>
             </div>
         </div>
     </section>
-
-    <div id="conversion-results-container-mp4" class="mt-8">
-        <?php // Placeholder for MP4 conversion results, download links, quality options etc. ?>
-    </div>
 
     <section class="py-16 bg-white">
         <div class="container mx-auto px-6">

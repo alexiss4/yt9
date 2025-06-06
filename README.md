@@ -41,7 +41,7 @@ This project provides a web interface for downloading YouTube videos in various 
         ```
     *   **`YT_DLP_PATH`**: Specify the path to your `yt-dlp` executable. If `yt-dlp` is in your system's PATH, you can usually leave this as `'yt-dlp'`.
         ```php
-        define('YT_DLP_PATH', 'yt-dlp'); 
+        define('YT_DLP_PATH', 'yt-dlp');
         // Example for a specific path:
         // define('YT_DLP_PATH', '/usr/local/bin/yt-dlp');
         ```

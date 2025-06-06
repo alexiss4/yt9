@@ -31,11 +31,11 @@ if ($action === 'getVideoInfo') {
         echo json_encode(['error' => function_exists('_t') ? _t('error_url_param_missing_for_getinfo', 'URL parameter missing or invalid for getVideoInfo action.') : 'URL parameter missing or invalid for getVideoInfo action.']);
         exit;
     }
-    
+
     // Note: URL is sanitized by YtDlpWrapper::getVideoInfo before escapeshellarg.
     // Basic frontend validation for URL format can be helpful but yt-dlp is the ultimate validator.
     $url = $_GET['url']; // Pass raw URL to wrapper; wrapper should handle sanitization for shell, and internal sanitization for display values.
-    
+
     // Further URL validation (optional, as yt-dlp will also validate)
     // It's generally good to validate early if possible.
     // The YtDlpWrapper's getVideoInfo now does sanitize_input for display parts, and escapeshellarg for command.
@@ -60,7 +60,7 @@ if ($action === 'getVideoInfo') {
         // Determine appropriate HTTP status code based on error type if possible
         // For now, using 500 for server-side/yt-dlp issues, 400 for bad inputs (already handled above)
         // YtDlpWrapper errors are generally server-side operational issues or yt-dlp failures.
-        http_response_code(500); 
+        http_response_code(500);
         header('Content-Type: application/json');
         echo json_encode(['error' => $videoDetails['error']]); // This error message is already from _t() in YtDlpWrapper
         exit;
@@ -76,14 +76,14 @@ if ($action === 'getVideoInfo') {
         echo json_encode(['error' => function_exists('_t') ? _t('error_search_query_missing', 'Search query missing or invalid.') : 'Search query missing or invalid.']);
         exit;
     }
-    
+
     // Note: Query is sanitized by YtDlpWrapper::searchVideos before escapeshellarg.
     $query = $_GET['query']; // Pass raw query
     $results = $ytDlp->searchVideos($query);
 
     // YtDlpWrapper::searchVideos returns an array with 'error' key on command execution failure
     // or an array of results (possibly empty) on success.
-    if (isset($results['error'])) { 
+    if (isset($results['error'])) {
         http_response_code(500);
         header('Content-Type: application/json');
         echo json_encode(['error' => $results['error']]); // Error message from _t() in YtDlpWrapper

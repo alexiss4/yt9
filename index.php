@@ -1,6 +1,6 @@
 <?php 
     require_once __DIR__ . '/config.php';
-    require_once __DIR__ . '/includes/header.php'; 
+    require_once __DIR__ . '/includes/header.php';
 ?>
 <main>
 <section class="bg-gradient-to-b from-blue-100 to-blue-50 py-16">
@@ -9,16 +9,17 @@
 <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">YouTube Video Downloader</h1>
 <p class="text-gray-600 mb-8">Download YouTube videos to mp3 and mp4 online for free.</p>
 <?php
-            $form_id = 'video-url-form'; 
+            $form_id = 'video-url-form';
             $input_placeholder = _t('enter_youtube_url_or_search_placeholder', 'Search keywords or paste video link here');
             $button_text = _t('download_button', 'Download');
             $button_icon = 'search';
-            require __DIR__ . '/includes/ui_components/video_form.php'; 
+            require __DIR__ . '/includes/ui_components/video_form.php';
             ?>
-</div>
+            <!-- Moved results container inside and added 'hidden' class -->
+            <div id="video-info-container" class="mt-8 hidden"></div>
+        </div>
 </div>
 </section>
-<div id="video-info-container" class="mt-8"></div>
 <section class="py-16">
 <div class="container mx-auto px-6">
 <p class="text-gray-700 text-center max-w-3xl mx-auto mb-12">

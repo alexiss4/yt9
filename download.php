@@ -43,7 +43,7 @@ $validated_url = $url; // URL is now considered validated for basic structure an
 // SECTION: Handle JSON API request for video info
 if (isset($_GET['json']) && $_GET['json'] == '1' || isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     // Note: $validated_url is already sanitized. YtDlpWrapper methods handle further escaping for shell.
-    $videoDetails = $ytDlp->getFormattableVideoInfo($validated_url); 
+    $videoDetails = $ytDlp->getFormattableVideoInfo($validated_url);
 
     if (isset($videoDetails['error'])) {
         http_response_code(500); // Or more specific based on error if possible
@@ -61,13 +61,13 @@ if (isset($_GET['json']) && $_GET['json'] == '1' || isset($_GET['ajax']) && $_GE
 // SECTION: Handle direct media download (format_id is present)
 if (isset($_GET['format_id'])) {
     $format_id = sanitize_input($_GET['format_id']);
-    
+
     // getVideoInfo is used here as we need raw format details to find the extension
-    $video_data = $ytDlp->getVideoInfo($validated_url); 
+    $video_data = $ytDlp->getVideoInfo($validated_url);
 
     // If fetching video info for title/extension fails, display error page
     if (isset($video_data['error']) || !isset($video_data['title'])) {
-        ob_start(); 
+        ob_start();
         // Only include header if it exists and output hasn't started
         if (!headers_sent() && file_exists(__DIR__ . "/includes/header.php")) {
              require_once __DIR__ . "/includes/header.php";
@@ -80,7 +80,7 @@ if (isset($_GET['format_id'])) {
         ob_end_flush(); // Send buffered output
         exit;
     }
-    
+
     $video_title = $video_data['title'];
     $original_extension = 'mp4'; // Default extension
 
@@ -93,10 +93,10 @@ if (isset($_GET['format_id'])) {
             }
         }
     }
-    
+
     // Stream the media - this function will set headers and exit.
     $ytDlp->streamMedia($validated_url, $format_id, $video_title, $original_extension);
-    exit; 
+    exit;
 // END SECTION: Direct media download
 
 } else {
@@ -109,7 +109,7 @@ if (isset($_GET['format_id'])) {
     if (!headers_sent() && file_exists(__DIR__ . "/includes/header.php")) {
         require_once __DIR__ . "/includes/header.php";
     }
-    
+
     // Note: $validated_url is already sanitized. YtDlpWrapper methods handle further escaping for shell.
     $videoDetailsForHtml = $ytDlp->getFormattableVideoInfo($validated_url);
 
@@ -137,7 +137,7 @@ if (isset($_GET['format_id'])) {
                         $format_label_html = htmlspecialchars($format['label']);
                         $format_id_html = htmlspecialchars($format['id']);
                         $download_link = 'download.php?url=' . urlencode($validated_url) . '&format_id=' . urlencode($format_id_html);
-                        
+
                         $file_details = htmlspecialchars($format['ext'] . (isset($format['resolution']) && $format['resolution'] !== 'Audio' ? ' - ' . $format['resolution'] : '') . (isset($format['filesize_approx_str']) ? ' - ' . $format['filesize_approx_str'] : ''));
 
                         echo '<li class="p-3 bg-gray-50 rounded-md shadow-sm hover:bg-gray-100 transition duration-150">';

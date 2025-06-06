@@ -25,14 +25,14 @@ $button_icon = $button_icon ?? 'search';
 $form_action_url = $form_action_url ?? '#'; // '#' or empty implies AJAX/JS handling
 $show_copyright_warning = $show_copyright_warning ?? true;
 // Use $_REQUEST to get 'url' value, works for POST (thumbnail page) and GET (if URL is passed in query for some reason)
-$input_value = isset($_REQUEST['url']) ? htmlspecialchars($_REQUEST['url']) : ''; 
+$input_value = isset($_REQUEST['url']) ? htmlspecialchars($_REQUEST['url']) : '';
 ?>
-<form id="<?php echo htmlspecialchars($form_id); ?>" 
+<form id="<?php echo htmlspecialchars($form_id); ?>"
       class="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-2"
       <?php if ($form_action_url !== '#') echo 'method="POST" action="'.htmlspecialchars($form_action_url).'"'; ?>
       >
-    <input name="url" class="flex-grow w-full sm:w-auto p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" 
-           placeholder="<?php echo htmlspecialchars($input_placeholder); ?>" type="text" required 
+    <input name="url" class="flex-grow w-full sm:w-auto p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+           placeholder="<?php echo htmlspecialchars($input_placeholder); ?>" type="text" required
            value="<?php echo $input_value; ?>"
     />
     <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-4 px-6 rounded-lg flex items-center justify-center w-full sm:w-auto">

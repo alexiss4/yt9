@@ -2,14 +2,14 @@
 // languages/en.php
 $lang = [
     // Existing Instagram Downloader translations (preserved)
-    'site_title' => 'SaveFromIG.com - Instagram Downloader', // This will likely be overridden by a more specific title in header.php if _t('site_title') is used there with a different default.
+    'site_title' => 'SaveFromIG.com - Instagram Downloader',
     'home' => 'Home',
     'about' => 'About',
     'contact' => 'Contact',
     'language' => 'Language',
     'hero_description' => 'Download Instagram photos, videos, and stories easily!',
     'enter_instagram_url' => 'Enter Instagram URL',
-    'download' => 'Download', // Generic, might be reused or might need context-specific versions
+    'download' => 'Download',
     'copy' => 'Copy',
     'post' => 'Post',
     'fast_and_easy' => 'Fast & Easy',
@@ -115,8 +115,7 @@ $lang = [
     'viewer_new_para2' => 'While viewing, you can also often identify content you might want to download using our other specific tools (like photo or video downloaders). It’s a great starting point for exploring public content. Please remember, this tool respects Instagram\'s privacy settings and cannot be used to view private profiles or access content that is not publicly available.',
 
     // YouTube Project Specific Strings Start Here
-    // General Site
-    'site_title_youtube' => 'YouTube Video Downloader', // More specific title for YouTube project
+    'site_title_youtube' => 'PHP YouTube Downloader & Tools', // Updated site title
     'nav_home' => 'YouTube Downloader',
     'nav_yt_to_mp3' => 'YouTube To Mp3',
     'nav_yt_to_mp4' => 'YouTube To Mp4',
@@ -161,14 +160,13 @@ $lang = [
     'yt_to_mp4_description' => 'Download and convert YouTube videos to MP4 format in various resolutions.',
     'convert_to_mp4_button' => 'Convert to MP4',
     'yt_to_mp4_features_title' => 'Features of Our YouTube to MP4 Converter',
-    'feature_high_resolution_title' => 'High Resolution Video', // Shared with index, but context might differ if text changes
+    // 'feature_high_resolution_title' is shared with index
     'feature_high_resolution_desc' => 'Download MP4 videos in resolutions up to 4K and 8K where available.',
     'feature_multiple_formats_mp4_title' => 'Multiple Format Options',
     'feature_multiple_formats_mp4_desc' => 'Choose from various MP4 quality levels and other video formats if needed.',
     'feature_fast_download_mp4_title' => 'Fast Downloads',
     'feature_fast_download_mp4_desc' => 'Our service quickly processes your video for fast MP4 downloads.',
-    'feature_no_registration_mp4_title' => 'No Registration Needed', // Shared, but context might differ
-    'feature_no_registration_mp4_desc' => 'Download and convert videos to MP4 without any signup or registration.',
+    // 'feature_no_registration_mp4_title' is shared
 
     // YouTube Thumbnail Downloader Page
     'yt_thumb_title' => 'YouTube Thumbnail Downloader',
@@ -182,35 +180,58 @@ $lang = [
     'thumb_mq_res' => 'Medium Quality',
     'thumb_default_res' => 'Default Quality',
     'thumb_not_available' => 'Thumbnail not available at this resolution.',
-    
-    // Error Messages (New and from YtDlpWrapper usage)
+
+    // Error Messages (PHP & Wrapper)
+    'error_no_url_provided' => 'No URL provided or URL is invalid.', // For download.php initial check
+    'error_no_action_param' => 'Action parameter missing or invalid.', // For api.php initial check
+    'error_url_param_missing_for_getinfo' => 'URL parameter missing or invalid for getVideoInfo action.', // For api.php
     'error_invalid_youtube_url' => 'Invalid YouTube URL. Please enter a valid video link.',
     'error_empty_youtube_url' => 'Please enter a YouTube URL.',
     'error_yt_dlp_execution_failed' => 'Failed to execute video information command. Please check server configuration or yt-dlp installation.',
     'error_parsing_video_info_json' => 'Failed to parse video information. The data may be malformed or incomplete.',
     'error_yt_dlp_search_execution_failed' => 'Failed to execute video search command. Please check server configuration or yt-dlp installation.',
-    'error_retrieve_video_info_yt_dlp' => 'Could not retrieve video information. yt-dlp command failed or video is unavailable.', // Used in getFormattableVideoInfo
-    'error_parse_video_info_yt_dlp' => 'Failed to parse video information from yt-dlp output.', // Used in getFormattableVideoInfo
-    'error_invalid_url_format' => 'Invalid URL format.', // Used in api.php
-    'error_search_query_missing' => 'Search query missing.', // Used in api.php search
-    'error_fetch_video_info_download' => 'Error: Could not re-fetch video information for download.', // Used in download.php
-    'error_retrieve_video_info' => 'Could not retrieve video information.', // Generic, used in download.php HTML fallback
-    'no_suitable_formats_html' => 'No suitable download formats found for this video.', // Used in download.php HTML fallback
+    'error_retrieve_video_info_yt_dlp' => 'Could not retrieve video information. yt-dlp command failed or video is unavailable.',
+    'error_parse_video_info_yt_dlp' => 'Failed to parse video information from yt-dlp output.',
+    'error_invalid_url_format' => 'Invalid URL format.',
+    'error_search_query_missing' => 'Search query missing or invalid.',
+    'error_fetch_video_info_download' => 'Error: Could not re-fetch video information for download.',
+    'error_retrieve_video_info' => 'Could not retrieve video information.',
+    'no_suitable_formats_html' => 'No suitable download formats found for this video.',
+    'error_invalid_action' => 'Invalid action specified.',
 
-    // YtDlpWrapper specific formats/placeholders
+
+    // YtDlpWrapper specific formats/placeholders & general terms
     'format_audio_mp3_best' => 'Audio MP3 (Best Available)',
     'filesize_unknown' => 'N/A',
-    'format_video_mp4_quality' => "MP4 {quality}", // {quality} is a placeholder
+    'format_video_mp4_quality' => "MP4 {quality}", // Placeholder for quality
+    'video_only_label' => 'Video Only', // For video-only streams
+    'audio_only_label' => 'Audio Only', // For audio-only streams (M4A, Opus)
     'search_title_na' => 'N/A',
     'search_uploader_na' => 'N/A',
     'search_duration_na' => 'N/A',
+    'best_available_audio' => 'Best Available', // For MP3 format description
+    'format_mp3_download' => 'MP3 Audio', // Label for MP3 option
+    'muxed_audio_label' => 'Best Audio', // Label for muxed video formats
 
-    // Download page UI
-    'download_video_title_page' => 'Download Video: {title}', // {title} is placeholder
-    'video_thumbnail_alt' => 'Video Thumbnail',
+    // Download page UI (PHP part)
+    'download_video_title_page' => 'Download Video: {title}',
+    'video_thumbnail_alt' => 'Video Thumbnail', // Used in download.php static HTML and JS
     'available_formats_title' => 'Available Formats:',
+    'duration_not_available' => 'N/A', // For duration string if not available
 
-    // ... any other pre-existing keys from the original file (if it was for YouTube project) would be here.
-    // For this merge, focusing on adding the new and ensuring YtDlpWrapper ones are present.
+    // JavaScript UI Strings (New)
+    'error_no_formats_found_js' => 'No downloadable formats were found for this video.',
+    'video_title_unavailable_js' => 'Video Title Unavailable',
+    // 'video_thumbnail_alt_js' => 'Video Thumbnail', // Re-using 'video_thumbnail_alt'
+    'duration_label_js' => 'Duration',
+    'duration_unknown_js' => 'N/A', // Re-using 'duration_not_available' or 'filesize_unknown'
+    'audio_section_title_js' => 'Audio Formats', // Changed for clarity
+    'video_section_title_js' => 'Video Formats', // Changed for clarity
+    'download_button_js' => 'DOWNLOAD',
+    'has_audio_title_js' => 'Includes audio',
+    'video_only_title_js' => 'Video only, no audio',
+    'show_more_button_js' => 'SHOW MORE',
+    'show_less_button_js' => 'SHOW LESS',
+
 ];
 ?>

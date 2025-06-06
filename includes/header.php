@@ -1,6 +1,6 @@
-<?php 
+<?php
     require_once __DIR__ . '/../config.php';
-    require_once __DIR__ . '/language.php'; 
+    require_once __DIR__ . '/language.php';
 ?>
 <!DOCTYPE html>
 <html lang="en"><head>

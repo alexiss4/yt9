@@ -21,6 +21,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <strong class="font-bold">Error:</strong>
                                 <span class="block sm:inline">${message}</span>
                             </div>`;
+        container.classList.remove('hidden'); // Ensure container is visible for errors
+        // Clear animation styles if they were added
+        container.style.maxHeight = '';
+        container.style.overflow = '';
     }
 
     /**
@@ -36,6 +40,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </svg>
                                 ${message}
                             </div>`;
+        container.classList.remove('hidden'); // Ensure container is visible for loading
+        // Clear animation styles if they were added
+        container.style.maxHeight = '';
+        container.style.overflow = '';
     }
 
     // --- Logic for download.php (Dynamic Format Loading) ---
@@ -48,14 +56,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (phpFormatList) phpFormatList.style.display = 'none'; // Hide static list if JS active
 
         let dlContainer = document.getElementById('download-options-container');
-        if (!dlContainer) { // Create container if not present in static HTML (fallback)
+        if (!dlContainer) {
             dlContainer = document.createElement('div');
             dlContainer.id = 'download-options-container';
-            dlContainer.className = 'bg-white shadow-lg rounded-lg p-6'; // Apply some default styling
-            // Try to insert it before the footer or append to main
-            const footer = document.querySelector('footer');
-            if (footer) {
-                mainElement.insertBefore(dlContainer, footer);
+            // Match styling of other main content boxes if this one is dynamically created
+            dlContainer.className = 'bg-white p-8 md:p-12 rounded-xl shadow-xl max-w-3xl mx-auto mt-8';
+            const firstSection = mainElement.querySelector('section'); // Try to insert before first section or append
+            if (firstSection) {
+                 mainElement.insertBefore(dlContainer, firstSection);
             } else {
                 mainElement.appendChild(dlContainer);
             }
@@ -71,9 +79,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 return response.json();
             })
             .then(data => {
-                dlContainer.innerHTML = ''; 
                 if (data.error) throw new Error(data.error);
-                displayVideoDownloadOptions(data, videoUrlDL, dlContainer, true); // isDownloadPageContext = true
+                displayVideoDownloadOptions(data, videoUrlDL, dlContainer);
             })
             .catch(error => {
                 console.error('Error fetching video info for download.php:', error);
@@ -82,19 +89,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Logic for index.php and other pages with video URL form (AJAX Form Submission: URL or Search) ---
-    const videoUrlForm = document.getElementById('video-url-form') || 
-                         document.getElementById('video-url-form-mp3') || 
+    const videoUrlForm = document.getElementById('video-url-form') ||
+                         document.getElementById('video-url-form-mp3') ||
                          document.getElementById('video-url-form-mp4');
-                         // Thumbnail page form ('video-url-form-thumbnail') is not handled by AJAX here, it uses standard POST.
 
     if (videoUrlForm) {
-        // Determine container based on form ID or a generic one
         let videoInfoContainer;
         if (videoUrlForm.id === 'video-url-form-mp3') {
             videoInfoContainer = document.getElementById('conversion-results-container');
         } else if (videoUrlForm.id === 'video-url-form-mp4') {
             videoInfoContainer = document.getElementById('conversion-results-container-mp4');
-        } else { // Default for index.php
+        } else {
             videoInfoContainer = document.getElementById('video-info-container');
         }
 
@@ -102,18 +107,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const submitButton = videoUrlForm.querySelector('button[type="submit"]');
 
         /**
-         * Handles the submission of the main video URL form (index.php, mp3, mp4 pages).
-         * It determines if the input is a URL or a search query and calls the appropriate function.
+         * Handles the submission of the main video URL form.
          * @param {Event} event - The form submission event.
          */
         videoUrlForm.addEventListener('submit', (event) => {
             event.preventDefault();
-            if (!videoInfoContainer) { // Ensure container exists
+            if (!videoInfoContainer) {
                 console.error("Video info container not found for form:", videoUrlForm.id);
                 return;
             }
             const inputValue = urlInput.value.trim();
-            const originalButtonText = submitButton.innerHTML;
+            const originalButtonHTML = submitButton.innerHTML; // Store full HTML
 
             createLoadingMessage('Processing your request...', videoInfoContainer);
             submitButton.disabled = true;
@@ -122,43 +126,41 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!inputValue) {
                 createErrorMessage('Please enter a YouTube URL or search query.', videoInfoContainer);
                 submitButton.disabled = false;
-                submitButton.innerHTML = originalButtonText;
+                submitButton.innerHTML = originalButtonHTML;
                 return;
             }
 
-            // Regex to identify YouTube video URLs
             const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|shorts\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
             const isUrl = youtubeRegex.test(inputValue);
 
             if (isUrl) {
-                fetchVideoInfo(inputValue, videoInfoContainer, submitButton, originalButtonText);
+                fetchVideoInfo(inputValue, videoInfoContainer, submitButton, originalButtonHTML);
             } else {
-                // Only perform search if on index.php (video-url-form)
-                if (videoUrlForm.id === 'video-url-form') {
-                    searchVideos(inputValue, videoInfoContainer, submitButton, originalButtonText);
+                if (videoUrlForm.id === 'video-url-form') { // Only index.php form supports search
+                    searchVideos(inputValue, videoInfoContainer, submitButton, originalButtonHTML);
                 } else {
                     createErrorMessage('Invalid YouTube URL. Please enter a valid video link for conversion.', videoInfoContainer);
                     submitButton.disabled = false;
-                    submitButton.innerHTML = originalButtonText;
+                    submitButton.innerHTML = originalButtonHTML;
                 }
             }
         });
     }
 
     /**
-     * Fetches video information (title, thumbnail, formats) from the API for a given YouTube URL.
+     * Fetches video information from the API.
      * @param {string} videoUrl - The YouTube video URL.
-     * @param {HTMLElement} container - The HTML element to display results or errors.
-     * @param {HTMLElement|null} button - The submit button element (optional, for disabling/reenabling).
-     * @param {string|null} originalButtonText - The original text of the submit button (optional).
+     * @param {HTMLElement} container - The HTML element to display results/errors.
+     * @param {HTMLElement|null} button - The submit button element (optional).
+     * @param {string|null} originalButtonHTML - The original HTML of the submit button (optional).
      */
-    function fetchVideoInfo(videoUrl, container, button, originalButtonText) {
+    function fetchVideoInfo(videoUrl, container, button, originalButtonHTML) {
         createLoadingMessage('Fetching video information...', container);
         fetch(`api.php?action=getVideoInfo&url=${encodeURIComponent(videoUrl)}`)
             .then(response => {
-                if (button) { 
+                if (button) {
                     button.disabled = false;
-                    button.innerHTML = originalButtonText;
+                    button.innerHTML = originalButtonHTML;
                 }
                 if (!response.ok) {
                     return response.json().then(errData => { throw new Error(errData.error || `Server error (${response.status}).`); })
@@ -167,35 +169,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 return response.json();
             })
             .then(data => {
-                container.innerHTML = ''; // Clear loading message
                 if (data.error) throw new Error(data.error);
-                displayVideoDownloadOptions(data, videoUrl, container, false); // isDownloadPageContext = false
+                displayVideoDownloadOptions(data, videoUrl, container);
             })
             .catch(error => {
                 console.error('Error fetching video info via API:', error);
                 createErrorMessage(error.message || 'Could not load video information. Please try again.', container);
-                if (button) { // Ensure button is re-enabled on error too
+                if (button) {
                     button.disabled = false;
-                    button.innerHTML = originalButtonText;
+                    button.innerHTML = originalButtonHTML;
                 }
             });
     }
 
     /**
-     * Performs a video search using the API based on a query.
-     * Displays search results or an error message.
+     * Performs a video search using the API.
      * @param {string} query - The search query.
-     * @param {HTMLElement} container - The HTML element to display search results or errors.
+     * @param {HTMLElement} container - The HTML element to display search results/errors.
      * @param {HTMLElement} button - The submit button element.
-     * @param {string} originalButtonText - The original text of the submit button.
+     * @param {string} originalButtonHTML - The original HTML of the submit button.
      */
-    function searchVideos(query, container, button, originalButtonText) {
+    function searchVideos(query, container, button, originalButtonHTML) {
         createLoadingMessage(`Searching for "${query}"...`, container);
         fetch(`api.php?action=searchVideos&query=${encodeURIComponent(query)}`)
             .then(response => {
-                if (button) { // Re-enable button once response starts
+                if (button) {
                      button.disabled = false;
-                     button.innerHTML = originalButtonText;
+                     button.innerHTML = originalButtonHTML;
                 }
                 if (!response.ok) {
                     return response.json().then(errData => { throw new Error(errData.error || `Search error (${response.status}).`); })
@@ -204,9 +204,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 return response.json();
             })
             .then(data => {
-                container.innerHTML = ''; // Clear loading/previous results
-                if (data.error) throw new Error(data.error); // API returned an error object
-
+                container.innerHTML = '';
+                if (data.error && data.results === undefined) { // Check if it's an error from searchVideos itself
+                    throw new Error(data.error);
+                }
                 if (data.results && data.results.length > 0) {
                     const searchResultsTitle = document.createElement('h3');
                     searchResultsTitle.className = 'text-2xl font-semibold mb-4 text-gray-800 text-center';
@@ -215,10 +216,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     data.results.forEach(video => {
                         const videoElement = document.createElement('div');
-                        // Styling for each search result item
                         videoElement.className = 'p-4 mb-4 border rounded-lg flex flex-col sm:flex-row items-start sm:space-x-4 shadow-md hover:shadow-lg transition-shadow';
                         
-                        const thumbnail = `<img src="${video.thumbnail_url}" alt="Thumbnail for ${video.title}" class="w-full sm:w-40 sm:h-24 object-cover rounded mb-3 sm:mb-0">`;
+                        const thumbnailHTML = video.thumbnail_url ? `<img src="${video.thumbnail_url}" alt="Thumbnail for ${video.title}" class="w-full sm:w-40 sm:h-24 object-cover rounded mb-3 sm:mb-0">` : '<div class="w-full sm:w-40 sm:h-24 bg-gray-200 flex items-center justify-center rounded mb-3 sm:mb-0"><span class="material-icons text-gray-400" style="font-size: 48px;">photo</span></div>';
                         
                         const detailsDiv = document.createElement('div');
                         detailsDiv.className = 'flex-grow';
@@ -228,50 +228,43 @@ document.addEventListener('DOMContentLoaded', () => {
                             <p class="text-sm text-gray-500">Duration: ${video.duration_string || 'N/A'}</p>
                         `;
 
-                        // "Get Download Links" button for each search result
                         const getFormatsBtn = document.createElement('button');
                         getFormatsBtn.className = 'get-formats-btn mt-3 py-2 px-4 bg-green-500 text-white rounded hover:bg-green-600 transition duration-150 text-sm';
                         getFormatsBtn.textContent = 'Get Download Links';
-                        getFormatsBtn.dataset.videoUrl = video.url; 
-                        // Store other details if needed for displayVideoDownloadOptions context, though not strictly used by fetchVideoInfo
-                        getFormatsBtn.dataset.videoTitle = video.title; 
-                        getFormatsBtn.dataset.videoThumbnail = video.thumbnail_url;
+                        getFormatsBtn.dataset.videoUrl = video.url;
+                        getFormatsBtn.dataset.videoTitle = video.title;
+                        getFormatsBtn.dataset.videoThumbnail = video.thumbnail_url || '';
 
                         detailsDiv.appendChild(getFormatsBtn);
-                        videoElement.innerHTML = thumbnail; 
-                        videoElement.appendChild(detailsDiv); 
+                        videoElement.innerHTML = thumbnailHTML;
+                        videoElement.appendChild(detailsDiv);
                         container.appendChild(videoElement);
                     });
 
-                    addFormatButtonListeners(); // Add listeners to the newly created buttons
+                    addFormatButtonListeners();
                 } else {
-                    // Handle no results found
                     container.innerHTML = '<p class="text-gray-600 text-center py-4">No videos found for your query. Please try different keywords.</p>';
                 }
             })
-            .catch(error => { // Catch network errors or errors thrown from .then()
+            .catch(error => {
                 console.error('Error fetching search results:', error);
                 createErrorMessage(error.message || 'Could not perform search. Please try again.', container);
-                 if (button) { // Ensure button is re-enabled on error
+                 if (button) {
                     button.disabled = false;
-                    button.innerHTML = originalButtonText;
+                    button.innerHTML = originalButtonHTML;
                 }
             });
     }
 
     /**
-     * Adds event listeners to "Get Download Links" buttons generated after a search.
-     * When clicked, these buttons will fetch and display download options for the respective video.
+     * Adds event listeners to "Get Download Links" buttons.
      */
     function addFormatButtonListeners() {
         document.querySelectorAll('.get-formats-btn').forEach(button => {
             button.addEventListener('click', (event) => {
                 const videoUrl = event.target.dataset.videoUrl;
-                // Re-use the main video info container from index.php to display formats.
-                // This implies search results will be cleared.
                 const videoInfoContainer = document.getElementById('video-info-container'); 
                 if (videoUrl && videoInfoContainer) {
-                    // Call fetchVideoInfo without button context as the main form's button isn't involved here.
                     fetchVideoInfo(videoUrl, videoInfoContainer, null, null); 
                 } else {
                     console.error("Could not find video URL or container for format fetching from search result.");
@@ -282,70 +275,154 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     /**
-     * Displays video title, thumbnail, and download format options in a specified container.
-     * @param {object} data - The video information object from the API (should include title, thumbnail_url, formats).
-     * @param {string} videoUrl - The original YouTube video URL (for generating download links).
-     * @param {HTMLElement} container - The HTML element to display the information in.
-     * @param {boolean} isDownloadPageContext - True if called from download.php, false if from index.php (search/direct URL). Affects styling.
+     * Displays video title, thumbnail, duration, and download format options.
+     * @param {object} data - Video information object from API.
+     * @param {string} videoUrl - Original YouTube video URL.
+     * @param {HTMLElement} container - HTML element to display in.
      */
-    function displayVideoDownloadOptions(data, videoUrl, container, isDownloadPageContext = false) {
-        // Clear previous content in the specific container
+    function displayVideoDownloadOptions(data, videoUrl, container) {
         container.innerHTML = ''; 
+        container.classList.remove('hidden');
+
+        const contentWrapper = document.createElement('div');
+        contentWrapper.style.maxHeight = '0px';
+        contentWrapper.style.overflow = 'hidden';
+        contentWrapper.style.transition = 'max-height 0.6s ease-out';
+
+        // --- Video Info Section ---
+        const videoInfoDiv = document.createElement('div');
+        videoInfoDiv.className = 'mb-4 text-center';
 
         if (data.title) {
             const titleElement = document.createElement('h3');
-            // Use slightly different styling based on context (index vs download page)
-            titleElement.className = isDownloadPage ? 'text-2xl font-bold text-gray-800 mb-2' : 'text-xl font-semibold mb-3 text-gray-800 text-center';
-            titleElement.textContent = isDownloadPage ? `Download Video: ${data.title}` : data.title;
-            container.appendChild(titleElement);
-        }
-
-        const thumbUrl = data.thumbnail_url || data.thumbnail; // API uses thumbnail_url, download.php JSON uses thumbnail
-        if (thumbUrl) {
-            const thumbnailElement = document.createElement('img');
-            thumbnailElement.src = thumbUrl;
-            thumbnailElement.alt = 'Video Thumbnail';
-            thumbnailElement.className = isDownloadPage ? 'my-4 rounded-lg shadow-md' : 'my-4 rounded shadow-lg w-full max-w-sm mx-auto';
-            if(isDownloadPage) thumbnailElement.style.maxWidth = '320px';
-            if(isDownloadPage) thumbnailElement.style.marginLeft = 'auto';
-            if(isDownloadPage) thumbnailElement.style.marginRight = 'auto';
-            container.appendChild(thumbnailElement);
-        }
-
-        if (data.formats && data.formats.length > 0) {
-            const formatsTitle = document.createElement('h4');
-            formatsTitle.className = isDownloadPage ? 'text-xl font-semibold text-gray-700 mb-4 mt-5' : 'text-lg font-medium text-gray-700 mb-3 mt-5 text-center';
-            formatsTitle.textContent = 'Available Download Options:';
-            container.appendChild(formatsTitle);
-
-            const listElement = document.createElement(isDownloadPage ? 'ul' : 'div');
-            listElement.className = isDownloadPage ? 'space-y-3' : 'flex flex-wrap justify-center gap-3';
-            
-            data.formats.forEach(format => {
-                const linkElement = document.createElement('a');
-                linkElement.href = `download.php?url=${encodeURIComponent(videoUrl)}&format_id=${encodeURIComponent(format.id || format.format_id)}`; // format.id from API, format.format_id from download.php JSON
-                
-                if (isDownloadPage) {
-                    const listItem = document.createElement('li');
-                    listItem.className = 'p-3 bg-gray-50 rounded-md shadow-sm hover:bg-gray-100 transition duration-150';
-                    linkElement.className = 'block text-blue-600 hover:text-blue-800 font-medium';
-                    let desc = format.description || `${format.ext} - ${format.resolution || format.format_note}`;
-                    linkElement.innerHTML = `<span class="material-icons text-sm mr-2 align-middle">${(format.id || format.format_id) === 'mp3' || (format.resolution === 'Audio' || (format.label && format.label.toLowerCase().includes('audio')) ) ? 'audiotrack' : 'videocam'}</span> ${desc}`;
-                    listItem.appendChild(linkElement);
-                    listElement.appendChild(listItem);
-                } else {
-                    linkElement.className = 'py-2 px-4 bg-green-500 text-white rounded hover:bg-green-600 my-1 inline-block text-sm shadow transition duration-150 ease-in-out transform hover:-translate-y-1';
-                    linkElement.textContent = format.label || `${format.ext.toUpperCase()} ${format.url_quality || (format.id || format.format_id)}`;
-                    const icon = document.createElement('span');
-                    icon.className = 'material-icons text-sm mr-1 align-middle';
-                    icon.textContent = (format.type === 'mp3' || (format.label && format.label.toLowerCase().includes('audio'))) ? 'audiotrack' : 'videocam';
-                    linkElement.prepend(icon);
-                    listElement.appendChild(linkElement);
-                }
-            });
-            container.appendChild(listElement);
+            titleElement.className = 'text-xl sm:text-2xl font-semibold text-gray-800 mb-2';
+            titleElement.textContent = data.title;
+            videoInfoDiv.appendChild(titleElement);
         } else {
-            container.innerHTML += '<p class="text-gray-600 text-center py-4">No suitable download formats found for this video. It might be a livestream or have unusual encoding.</p>';
+            const titleElement = document.createElement('h3');
+            titleElement.className = 'text-xl sm:text-2xl font-semibold text-gray-800 mb-2';
+            titleElement.textContent = (window.siteTranslations && window.siteTranslations['video_title_unavailable_js']) || 'Video Title Unavailable';
+            videoInfoDiv.appendChild(titleElement);
         }
-    }
+
+        if (data.thumbnail_url) {
+            const thumbnailElement = document.createElement('img');
+            thumbnailElement.src = data.thumbnail_url;
+            thumbnailElement.alt = (window.siteTranslations && window.siteTranslations['video_thumbnail_alt_js']) || 'Video Thumbnail';
+            thumbnailElement.className = 'my-3 rounded-lg shadow-md w-full max-w-sm mx-auto';
+            videoInfoDiv.appendChild(thumbnailElement);
+        }
+
+        if (data.duration_string) {
+            const durationElement = document.createElement('p');
+            durationElement.className = 'text-sm text-gray-600 mb-3';
+            durationElement.innerHTML = `<span class="font-medium">${(window.siteTranslations && window.siteTranslations['duration_label_js']) || 'Duration'}:</span> ${data.duration_string}`;
+            videoInfoDiv.appendChild(durationElement);
+        }
+        contentWrapper.appendChild(videoInfoDiv);
+
+        // --- Formats Tables ---
+        if (data.formats && data.formats.length > 0) {
+            const audioFormats = data.formats.filter(f => f.category === 'audio');
+            const videoFormats = data.formats.filter(f => f.category === 'video');
+            let videoFormatsToShowInitially = 3;
+
+            const createTable = (formats, titleKey, defaultTitle, videoUrlForTable, isVideoTable = false) => {
+                if (formats.length === 0) return null;
+
+                const sectionDiv = document.createElement('div');
+                sectionDiv.className = 'mb-4';
+
+                const sectionTitle = document.createElement('h4');
+                sectionTitle.className = 'text-md font-semibold text-gray-700 mb-2 border-b pb-1';
+                sectionTitle.textContent = (window.siteTranslations && window.siteTranslations[titleKey]) || defaultTitle;
+                sectionDiv.appendChild(sectionTitle);
+
+                const table = document.createElement('table');
+                table.className = 'w-full text-sm border-collapse';
+
+                const tbody = document.createElement('tbody');
+                formats.forEach((format, index) => {
+                    const tr = document.createElement('tr');
+                    tr.className = index % 2 === 0 ? 'bg-gray-50' : '';
+                    if (isVideoTable && index >= videoFormatsToShowInitially) {
+                        tr.classList.add('hidden', 'extra-video-format');
+                    }
+
+                    const tdQuality = document.createElement('td');
+                    tdQuality.className = 'p-2 border border-gray-300 text-left font-medium';
+                    let qualityHtml = format.label || format.resolution_or_bitrate || format.id;
+                    if (format.category === 'video') {
+                        const audioIconText = format.has_audio ?
+                            ((window.siteTranslations && window.siteTranslations['has_audio_title_js']) || 'Includes audio') :
+                            ((window.siteTranslations && window.siteTranslations['video_only_title_js']) || 'Video only');
+                        const audioIconClass = format.has_audio ? 'icon' : 'icon muted-icon';
+                        const audioIconName = format.has_audio ? 'volume_up' : 'volume_off';
+                        qualityHtml = `${format.resolution_or_bitrate || format.label} <span class="material-icons ${audioIconClass}" title="${audioIconText}">${audioIconName}</span>`;
+                    }
+                    tdQuality.innerHTML = qualityHtml;
+                    tr.appendChild(tdQuality);
+
+                    const tdFilesize = document.createElement('td');
+                    tdFilesize.className = 'p-2 border border-gray-300 text-center text-gray-600';
+                    tdFilesize.textContent = format.filesize_str || 'N/A';
+                    tr.appendChild(tdFilesize);
+
+                    const tdButton = document.createElement('td');
+                    tdButton.className = 'p-2 border border-gray-300 text-right';
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = `download.php?url=${encodeURIComponent(videoUrlForTable)}&format_id=${encodeURIComponent(format.id)}`;
+                    downloadLink.className = 'download-button py-1 px-2 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs sm:text-sm';
+                    downloadLink.innerHTML = `<span class="material-icons icon text-sm mr-1">file_download</span> ${((window.siteTranslations && window.siteTranslations['download_button_js']) || 'DOWNLOAD')}`;
+                    downloadLink.setAttribute('role', 'button');
+                    tdButton.appendChild(downloadLink);
+                    tr.appendChild(tdButton);
+
+                    tbody.appendChild(tr);
+                });
+                table.appendChild(tbody);
+                sectionDiv.appendChild(table);
+                
+                if (isVideoTable && formats.length > videoFormatsToShowInitially) {
+                    const showMoreButton = document.createElement('button');
+                    showMoreButton.className = 'mt-2 py-1 px-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded text-xs w-full';
+                    showMoreButton.textContent = (window.siteTranslations && window.siteTranslations['show_more_button_js']) || 'SHOW MORE';
+                    let allShown = false;
+
+                    showMoreButton.addEventListener('click', () => {
+                        allShown = !allShown;
+                        for(let i = videoFormatsToShowInitially; i < tbody.rows.length; i++) {
+                            tbody.rows[i].classList.toggle('hidden', !allShown);
+                        }
+                        showMoreButton.textContent = allShown ?
+                            ((window.siteTranslations && window.siteTranslations['show_less_button_js']) || 'SHOW LESS') :
+                            ((window.siteTranslations && window.siteTranslations['show_more_button_js']) || 'SHOW MORE');
+                    });
+                    sectionDiv.appendChild(showMoreButton);
+                }
+                return sectionDiv;
+            };
+
+            const audioTableContainer = createTable(audioFormats, 'audio_section_title_js', 'Audio Formats', videoUrl, false);
+            if (audioTableContainer) contentWrapper.appendChild(audioTableContainer);
+
+            const videoTableContainer = createTable(videoFormats, 'video_section_title_js', 'Video Formats', videoUrl, true);
+            if (videoTableContainer) contentWrapper.appendChild(videoTableContainer);
+
+        } else {
+            const noFormatsMessage = document.createElement('p');
+            noFormatsMessage.className = 'text-gray-600 text-center py-4';
+            noFormatsMessage.textContent = (window.siteTranslations && window.siteTranslations['error_no_formats_found_js']) || 'No downloadable formats were found for this video.';
+            contentWrapper.appendChild(noFormatsMessage);
+        }
+
+        container.appendChild(contentWrapper);
+
+        // Trigger the animation
+        requestAnimationFrame(() => {
+            contentWrapper.getBoundingClientRect(); // Force reflow
+            contentWrapper.style.maxHeight = contentWrapper.scrollHeight + 'px';
+        });
+
+    } // End of displayVideoDownloadOptions
 });

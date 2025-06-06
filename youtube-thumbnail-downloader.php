@@ -46,9 +46,9 @@
                 $input_placeholder = _t('enter_youtube_url_placeholder', 'Paste YouTube video link here');
                 $button_text = _t('get_thumbnails_button', 'Get Thumbnails');
                 $button_icon = 'image';
-                $form_action_url = 'youtube-thumbnail-downloader.php'; 
-                $show_copyright_warning = false; 
-                require __DIR__ . '/includes/ui_components/video_form.php'; 
+                $form_action_url = 'youtube-thumbnail-downloader.php';
+                $show_copyright_warning = false;
+                require __DIR__ . '/includes/ui_components/video_form.php';
                 ?>
 
                 <?php if (!empty($error_message)): ?>
