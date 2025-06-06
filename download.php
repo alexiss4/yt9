@@ -27,8 +27,9 @@ if (!filter_var($url, FILTER_VALIDATE_URL)) {
     exit;
 }
 
-// Basic YouTube URL pattern check
-if (!preg_match('/(youtube\.com\/watch\?v=|youtu\.be\/)/', $url)) {
+// Basic YouTube URL pattern check (using a more comprehensive regex similar to api.php)
+$youtube_regex = '/^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})(?:&.*|(?:\?.*)?)?$/';
+if (!preg_match($youtube_regex, $url)) {
     ob_start();
     if (!headers_sent() && file_exists(__DIR__ . "/includes/header.php")) { require_once __DIR__ . '/includes/header.php'; }
     echo "<main class='container mx-auto mt-8 p-4'><div class='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative' role='alert'>"._t('error_invalid_youtube_url', 'Invalid YouTube URL provided. Please use a valid YouTube video link.')."</div></main>";

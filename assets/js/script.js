@@ -12,6 +12,39 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Helper Functions ---
 
     /**
+     * Generic Fetch API wrapper
+     * @param {string} url - The URL to fetch.
+     * @param {object} options - Fetch options (method, headers, body, etc.).
+     * @returns {Promise<object>} - A promise that resolves with the JSON data or rejects with an error.
+     */
+    async function fetchAPI(url, options = {}) {
+        try {
+            const response = await fetch(url, options);
+            if (!response.ok) {
+                let errorData;
+                try {
+                    errorData = await response.json();
+                } catch (e) {
+                    // If JSON parsing fails, use status text or a generic message
+                    throw new Error(response.statusText || `Server error: ${response.status}`);
+                }
+                throw new Error(errorData.error || `Server error: ${response.status}`);
+            }
+            // Handle cases where response might be empty but still OK (e.g., 204 No Content)
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+                return await response.json();
+            } else {
+                return { success: true, message: "Operation successful, no JSON response." }; // Or handle as per API design
+            }
+        } catch (error) {
+            // Catch network errors or errors thrown from response.ok check
+            console.error('Fetch API Error:', error);
+            throw error; // Re-throw to be caught by the caller
+        }
+    }
+
+    /**
      * Creates and displays an error message within a specified container.
      * @param {string} message - The error message to display.
      * @param {HTMLElement} container - The HTML element to display the error message in.
@@ -70,15 +103,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         createLoadingMessage('Loading video formats...', dlContainer);
 
-        fetch(`download.php?url=${encodeURIComponent(videoUrlDL)}&json=1`)
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(errData => { throw new Error(errData.error || `Server error: ${response.status}. Please try again.`); })
-                                     .catch(() => { throw new Error(`Server error: ${response.status}. Could not retrieve format details.`); });
-                }
-                return response.json();
-            })
+        fetchAPI(`download.php?url=${encodeURIComponent(videoUrlDL)}&json=1`)
             .then(data => {
+                // fetchAPI throws on error, so data.error check might be redundant if API always returns error in {error: "message"} format
+                // However, keeping it for safety if API sometimes returns 200 OK with an error payload.
                 if (data.error) throw new Error(data.error);
                 displayVideoDownloadOptions(data, videoUrlDL, dlContainer);
             })
@@ -107,9 +135,40 @@ document.addEventListener('DOMContentLoaded', () => {
         const submitButton = videoUrlForm.querySelector('button[type="submit"]');
 
         /**
-         * Handles the submission of the main video URL form.
-         * @param {Event} event - The form submission event.
+         * Core logic for handling video URL/search form submission.
+         * @param {string} inputValue - The value from the URL input field.
+         * @param {HTMLElement} container - The container to display results/errors.
+         * @param {HTMLElement} button - The submit button element.
+         * @param {string} originalButtonHTML - Original HTML content of the button.
+         * @param {string} formId - The ID of the form being submitted.
          */
+        function processFormSubmission(inputValue, container, button, originalButtonHTML, formId) {
+            if (!inputValue) {
+                createErrorMessage((window.siteTranslations && window.siteTranslations['error_enter_url_or_query_js']) || 'Please enter a YouTube URL or search query.', container);
+                button.disabled = false;
+                button.innerHTML = originalButtonHTML; // Restore button state
+                return;
+            }
+
+            // Regex to identify YouTube URLs
+            const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|shorts\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+            const isUrl = youtubeRegex.test(inputValue);
+
+            if (isUrl) {
+                fetchVideoInfo(inputValue, container, button, originalButtonHTML);
+            } else {
+                // Search functionality is typically for the main form on index.php
+                if (formId === 'video-url-form') {
+                    searchVideos(inputValue, container, button, originalButtonHTML);
+                } else {
+                    // MP3/MP4 specific pages might not support search, expect a direct URL
+                    createErrorMessage((window.siteTranslations && window.siteTranslations['error_invalid_youtube_url_conversion_js']) || 'Invalid YouTube URL. Please enter a valid video link for conversion.', container);
+                    button.disabled = false;
+                    button.innerHTML = originalButtonHTML; // Restore button state
+                }
+            }
+        }
+
         videoUrlForm.addEventListener('submit', (event) => {
             event.preventDefault();
             if (!videoInfoContainer) {
@@ -117,33 +176,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             const inputValue = urlInput.value.trim();
-            const originalButtonHTML = submitButton.innerHTML; // Store full HTML
+            const originalButtonHTML = submitButton.innerHTML;
 
-            createLoadingMessage('Processing your request...', videoInfoContainer);
+            // Set loading state for button and container
+            const loadingMessageText = (window.siteTranslations && window.siteTranslations['loading_processing_js']) || 'Processing your request...';
+            createLoadingMessage(loadingMessageText, videoInfoContainer);
             submitButton.disabled = true;
-            submitButton.innerHTML = `<svg class="animate-spin h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Processing...`;
+            const processingButtonText = (window.siteTranslations && window.siteTranslations['button_processing_js']) || 'Processing...';
+            submitButton.innerHTML = `<svg class="animate-spin h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> ${processingButtonText}`;
 
-            if (!inputValue) {
-                createErrorMessage('Please enter a YouTube URL or search query.', videoInfoContainer);
-                submitButton.disabled = false;
-                submitButton.innerHTML = originalButtonHTML;
-                return;
-            }
-
-            const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|shorts\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
-            const isUrl = youtubeRegex.test(inputValue);
-
-            if (isUrl) {
-                fetchVideoInfo(inputValue, videoInfoContainer, submitButton, originalButtonHTML);
-            } else {
-                if (videoUrlForm.id === 'video-url-form') { // Only index.php form supports search
-                    searchVideos(inputValue, videoInfoContainer, submitButton, originalButtonHTML);
-                } else {
-                    createErrorMessage('Invalid YouTube URL. Please enter a valid video link for conversion.', videoInfoContainer);
-                    submitButton.disabled = false;
-                    submitButton.innerHTML = originalButtonHTML;
-                }
-            }
+            processFormSubmission(inputValue, videoInfoContainer, submitButton, originalButtonHTML, videoUrlForm.id);
         });
     }
 
@@ -154,32 +196,25 @@ document.addEventListener('DOMContentLoaded', () => {
      * @param {HTMLElement|null} button - The submit button element (optional).
      * @param {string|null} originalButtonHTML - The original HTML of the submit button (optional).
      */
-    function fetchVideoInfo(videoUrl, container, button, originalButtonHTML) {
+    async function fetchVideoInfo(videoUrl, container, button, originalButtonHTML) {
         createLoadingMessage('Fetching video information...', container);
-        fetch(`api.php?action=getVideoInfo&url=${encodeURIComponent(videoUrl)}`)
-            .then(response => {
-                if (button) {
-                    button.disabled = false;
-                    button.innerHTML = originalButtonHTML;
-                }
-                if (!response.ok) {
-                    return response.json().then(errData => { throw new Error(errData.error || `Server error (${response.status}).`); })
-                                     .catch(() => { throw new Error(`Server error (${response.status}). Could not retrieve video details.`); });
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.error) throw new Error(data.error);
-                displayVideoDownloadOptions(data, videoUrl, container);
-            })
-            .catch(error => {
-                console.error('Error fetching video info via API:', error);
-                createErrorMessage(error.message || 'Could not load video information. Please try again.', container);
-                if (button) {
-                    button.disabled = false;
-                    button.innerHTML = originalButtonHTML;
-                }
-            });
+        try {
+            const data = await fetchAPI(`api.php?action=getVideoInfo&url=${encodeURIComponent(videoUrl)}`);
+            // If fetchAPI resolves, it means response.ok was true and JSON parsed (if applicable)
+            // Still, API might return a 200 OK with an error payload like {error: "message"}
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            displayVideoDownloadOptions(data, videoUrl, container);
+        } catch (error) {
+            console.error('Error fetching video info via API:', error);
+            createErrorMessage(error.message || 'Could not load video information. Please try again.', container);
+        } finally {
+            if (button && originalButtonHTML) {
+                button.disabled = false;
+                button.innerHTML = originalButtonHTML;
+            }
+        }
     }
 
     /**
@@ -189,71 +224,93 @@ document.addEventListener('DOMContentLoaded', () => {
      * @param {HTMLElement} button - The submit button element.
      * @param {string} originalButtonHTML - The original HTML of the submit button.
      */
-    function searchVideos(query, container, button, originalButtonHTML) {
+    async function searchVideos(query, container, button, originalButtonHTML) {
         createLoadingMessage(`Searching for "${query}"...`, container);
-        fetch(`api.php?action=searchVideos&query=${encodeURIComponent(query)}`)
-            .then(response => {
-                if (button) {
-                     button.disabled = false;
-                     button.innerHTML = originalButtonHTML;
-                }
-                if (!response.ok) {
-                    return response.json().then(errData => { throw new Error(errData.error || `Search error (${response.status}).`); })
-                                     .catch(() => { throw new Error(`Search error (${response.status}). Could not retrieve search results.`); });
-                }
-                return response.json();
-            })
-            .then(data => {
-                container.innerHTML = '';
-                if (data.error && data.results === undefined) { // Check if it's an error from searchVideos itself
-                    throw new Error(data.error);
-                }
-                if (data.results && data.results.length > 0) {
-                    const searchResultsTitle = document.createElement('h3');
-                    searchResultsTitle.className = 'text-2xl font-semibold mb-4 text-gray-800 text-center';
-                    searchResultsTitle.textContent = 'Search Results:';
-                    container.appendChild(searchResultsTitle);
+        try {
+            const data = await fetchAPI(`api.php?action=searchVideos&query=${encodeURIComponent(query)}`);
 
-                    data.results.forEach(video => {
-                        const videoElement = document.createElement('div');
-                        videoElement.className = 'p-4 mb-4 border rounded-lg flex flex-col sm:flex-row items-start sm:space-x-4 shadow-md hover:shadow-lg transition-shadow';
-                        
-                        const thumbnailHTML = video.thumbnail_url ? `<img src="${video.thumbnail_url}" alt="Thumbnail for ${video.title}" class="w-full sm:w-40 sm:h-24 object-cover rounded mb-3 sm:mb-0">` : '<div class="w-full sm:w-40 sm:h-24 bg-gray-200 flex items-center justify-center rounded mb-3 sm:mb-0"><span class="material-icons text-gray-400" style="font-size: 48px;">photo</span></div>';
-                        
-                        const detailsDiv = document.createElement('div');
-                        detailsDiv.className = 'flex-grow';
-                        detailsDiv.innerHTML = `
-                            <h4 class="text-lg font-semibold text-blue-600">${video.title}</h4>
-                            <p class="text-sm text-gray-600">By: ${video.uploader || 'N/A'}</p>
-                            <p class="text-sm text-gray-500">Duration: ${video.duration_string || 'N/A'}</p>
-                        `;
+            container.innerHTML = ''; // Clear previous results or loading message
 
-                        const getFormatsBtn = document.createElement('button');
-                        getFormatsBtn.className = 'get-formats-btn mt-3 py-2 px-4 bg-green-500 text-white rounded hover:bg-green-600 transition duration-150 text-sm';
-                        getFormatsBtn.textContent = 'Get Download Links';
-                        getFormatsBtn.dataset.videoUrl = video.url;
-                        getFormatsBtn.dataset.videoTitle = video.title;
-                        getFormatsBtn.dataset.videoThumbnail = video.thumbnail_url || '';
+            // Check for API-specific error structure even with a successful HTTP response
+            if (data.error && data.results === undefined) {
+                throw new Error(data.error);
+            }
 
-                        detailsDiv.appendChild(getFormatsBtn);
-                        videoElement.innerHTML = thumbnailHTML;
-                        videoElement.appendChild(detailsDiv);
-                        container.appendChild(videoElement);
-                    });
+            if (data.results && data.results.length > 0) {
+                const searchResultsTitle = document.createElement('h3');
+                searchResultsTitle.className = 'text-2xl font-semibold mb-4 text-gray-800 text-center';
+                searchResultsTitle.textContent = 'Search Results:';
+                container.appendChild(searchResultsTitle);
+
+                data.results.forEach(video => {
+                    const videoElement = document.createElement('div');
+                    videoElement.className = 'p-4 mb-4 border rounded-lg flex flex-col sm:flex-row items-start sm:space-x-4 shadow-md hover:shadow-lg transition-shadow';
+
+                    // Create thumbnail element using createElement
+                    const thumbnailContainer = document.createElement('div');
+                    // Added flex-shrink-0 to prevent thumbnail container from shrinking disproportionately
+                    thumbnailContainer.className = 'w-full sm:w-40 sm:h-24 rounded mb-3 sm:mb-0 flex-shrink-0';
+                    if (video.thumbnail_url) {
+                        const img = document.createElement('img');
+                        img.src = video.thumbnail_url;
+                        // Use translated alt text if available, otherwise fallback
+                        img.alt = (window.siteTranslations && window.siteTranslations['video_thumbnail_alt_js']) || `Thumbnail for ${video.title}`;
+                        img.className = 'w-full h-full object-cover rounded';
+                        thumbnailContainer.appendChild(img);
+                    } else {
+                        thumbnailContainer.classList.add('bg-gray-200', 'flex', 'items-center', 'justify-center');
+                        const icon = document.createElement('span');
+                        icon.className = 'material-icons text-gray-400'; // Using Material Icons class
+                        icon.style.fontSize = '48px';
+                        icon.textContent = 'photo'; // Material icon name for a generic image placeholder
+                        thumbnailContainer.appendChild(icon);
+                    }
+                    videoElement.appendChild(thumbnailContainer);
+
+                    const detailsDiv = document.createElement('div');
+                    detailsDiv.className = 'flex-grow';
+
+                    const titleH4 = document.createElement('h4');
+                    titleH4.className = 'text-lg font-semibold text-blue-600';
+                    titleH4.textContent = video.title;
+                    detailsDiv.appendChild(titleH4);
+
+                    const uploaderP = document.createElement('p');
+                    uploaderP.className = 'text-sm text-gray-600';
+                    uploaderP.textContent = `${(window.siteTranslations && window.siteTranslations['by_label_js']) || 'By'}: ${video.uploader || 'N/A'}`;
+                    detailsDiv.appendChild(uploaderP);
+
+                    const durationP = document.createElement('p');
+                    durationP.className = 'text-sm text-gray-500';
+                    durationP.textContent = `${(window.siteTranslations && window.siteTranslations['duration_label_js']) || 'Duration'}: ${video.duration_string || 'N/A'}`;
+                    detailsDiv.appendChild(durationP);
+
+                    const getFormatsBtn = document.createElement('button');
+                    getFormatsBtn.className = 'get-formats-btn mt-3 py-2 px-4 bg-green-500 text-white rounded hover:bg-green-600 transition duration-150 text-sm';
+                    // Use translated button text if available
+                    getFormatsBtn.textContent = (window.siteTranslations && window.siteTranslations['get_download_links_btn_js']) || 'Get Download Links';
+                    getFormatsBtn.dataset.videoUrl = video.url;
+                    getFormatsBtn.dataset.videoTitle = video.title;
+                    getFormatsBtn.dataset.videoThumbnail = video.thumbnail_url || '';
+
+                    detailsDiv.appendChild(getFormatsBtn);
+                    videoElement.appendChild(detailsDiv);
+                    container.appendChild(videoElement);
+                });
 
                     addFormatButtonListeners();
                 } else {
                     container.innerHTML = '<p class="text-gray-600 text-center py-4">No videos found for your query. Please try different keywords.</p>';
                 }
-            })
-            .catch(error => {
-                console.error('Error fetching search results:', error);
-                createErrorMessage(error.message || 'Could not perform search. Please try again.', container);
-                 if (button) {
-                    button.disabled = false;
-                    button.innerHTML = originalButtonHTML;
-                }
-            });
+        } catch (error) {
+            console.error('Error fetching search results:', error);
+            createErrorMessage(error.message || 'Could not perform search. Please try again.', container);
+        } finally {
+            if (button && originalButtonHTML) {
+                button.disabled = false;
+                button.innerHTML = originalButtonHTML;
+            }
+        }
     }
 
     /**

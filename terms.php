@@ -1,7 +1,7 @@
 <?php 
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+// Error reporting should be handled by config.php, included via header.php
+// Error reporting should be handled by config.php, included via header.php
+// Error reporting should be handled by config.php, included via header.php
 include("includes/header.php"); 
 ?>
 <main class="container mx-auto px-6 py-8">
