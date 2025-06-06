@@ -52,7 +52,10 @@
                 ?>
 
                 <?php if (!empty($error_message)): ?>
-                    <p class="text-red-500 mt-4"><?php echo htmlspecialchars($error_message); // Keep error message display specific to this page ?></p>
+                    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative text-center mt-4" role="alert">
+                        <strong class="font-bold"><?php echo _t('error_label', 'Error'); ?>:</strong>
+                        <span class="block sm:inline"><?php echo htmlspecialchars($error_message); ?></span>
+                    </div>
                 <?php endif; ?>
             </div>
         </div>

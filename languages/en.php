@@ -233,5 +233,7 @@ $lang = [
     'show_more_button_js' => 'SHOW MORE',
     'show_less_button_js' => 'SHOW LESS',
 
+    // Country Flag Emoji
+    'lang_flag_emoji' => '🇺🇸',
 ];
 ?>

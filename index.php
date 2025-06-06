@@ -58,7 +58,7 @@
 <div class="container mx-auto px-6">
 <h3 class="text-2xl font-semibold text-gray-800 text-center mb-8">How to Use YTiD downloader Short Domain?</h3>
 <div class="flex justify-center mb-8">
-<img alt="Example of YouTube link modification for download" class="rounded-lg shadow-lg" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkmQLjx50v6PbwySgbuGFXWCFLoiM3e6tpIejutITzm6RxLZPDuK1QbKyeMmNNhRygbz7e1LW-zmAoCyBv9WY6x5e5XJNnZ5y6HAIXsfwMX3-4a3CqYFF7i_4BZJ7dio8PTSivYcuY4K0houUzjrrzrsfAHdhDnF8IFkKvyRl26efTAU_lp8-VPyS4WhVgOOJb9nfofGINBT7Qdx3nnceBqcU4O7N3Fff9y3epaokyMbAMSzquqIu-G3XtgfJmaBPl6G-PEzL-iqUx"/>
+<img alt="Example of YouTube link modification for download" class="rounded-lg shadow-lg w-full max-w-lg" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkmQLjx50v6PbwySgbuGFXWCFLoiM3e6tpIejutITzm6RxLZPDuK1QbKyeMmNNhRygbz7e1LW-zmAoCyBv9WY6x5e5XJNnZ5y6HAIXsfwMX3-4a3CqYFF7i_4BZJ7dio8PTSivYcuY4K0houUzjrrzrsfAHdhDnF8IFkKvyRl26efTAU_lp8-VPyS4WhVgOOJb9nfofGINBT7Qdx3nnceBqcU4O7N3Fff9y3epaokyMbAMSzquqIu-G3XtgfJmaBPl6G-PEzL-iqUx"/>
 </div>
 <div class="grid md:grid-cols-3 gap-8 text-left">
 <div class="bg-white p-6 rounded-lg shadow-lg">

@@ -47,53 +47,97 @@ class YtDlpWrapper {
      *                      or false if execution fails or returns a recognized error pattern.
      */
     private function executeCommand($command) {
-        $output = shell_exec($command . " 2>&1"); // Capture stderr as well
+        $output = shell_exec($command . " 2>&1");
 
-        // Check for null (command failed to run) or empty/whitespace-only output
-        if ($output === null || trim($output) === '') {
-            // Log if command returned empty or falsy output
-            error_log("YtDlpWrapper::executeCommand: Command returned empty, null, or whitespace-only output. Command: " . $command . " Raw Output: " . var_export($output, true));
-            return false; // Explicitly return false for these cases
-        }
-        // Check for known yt-dlp error strings, but only if output is relatively short
-        // to avoid matching on video titles or descriptions that might contain "ERROR:"
-        if (strpos($output, "ERROR:") !== false && strlen($output) < 200) {
-            if (defined('LOG_FILE_PATH') && LOG_FILE_PATH) { // This specific logging might be redundant if general one below is active
-                error_log("YtDlpWrapper::executeCommand: yt-dlp command error explicitly indicated. Command: $command. Output: " . $output);
-            }
-            // Also log if output doesn't look like JSON, which is often the case for yt-dlp direct error messages
-            if (!preg_match('/^\s*[{[]/', $output)) {
-                 error_log("YtDlpWrapper::executeCommand: Command returned non-JSON output, possibly an error message. Command: " . $command . " Output: " . substr($output, 0, 1000));
-            }
-            return false; // Return false if "ERROR:" is found in short output
+        if ($output === null) {
+            // This means shell_exec failed to run the command (e.g., process could not be created).
+            error_log("YtDlpWrapper::executeCommand: Failed to execute command. `shell_exec` returned null. Command: " . $command);
+            return ['output' => null, 'error' => 'command_execution_failed', 'message' => 'Server failed to execute the command.' ];
         }
 
-        return $output;
+        if (trim($output) === '') {
+            // Command ran but produced no output. This might be an error or expected for some commands.
+            // For yt-dlp, it usually indicates an issue if JSON output was expected.
+            error_log("YtDlpWrapper::executeCommand: Command produced no output. Command: " . $command);
+            // Returning a specific error structure
+            return ['output' => '', 'error' => 'empty_output', 'message' => 'Command produced no output.'];
+        }
+
+        // Check for common yt-dlp error indicators.
+        // yt-dlp often outputs "ERROR:" at the beginning of a line for actual errors.
+        // It might also output plain text messages not in JSON format when errors occur.
+        $is_likely_json = preg_match('/^\s*[{[]/', $output); // Check if output starts like JSON
+        $contains_error_keyword = stripos($output, "ERROR:") !== false;
+
+        if ($contains_error_keyword && !$is_likely_json) {
+            // If "ERROR:" is present and output is NOT JSON, it's highly likely a yt-dlp direct error message.
+            $error_message_excerpt = substr(trim($output), 0, 255); // Log a snippet of the error
+            error_log("YtDlpWrapper::executeCommand: yt-dlp command indicated an error. Command: $command. Output: " . $error_message_excerpt);
+            return ['output' => $output, 'error' => 'yt_dlp_error', 'message' => 'yt-dlp reported an error: ' . $error_message_excerpt ];
+        }
+
+        // If output looks like JSON but contains "ERROR:", it might be part of a description or title.
+        // However, if it's short and contains "ERROR:", it's still suspicious.
+        // This condition is more nuanced. For now, we rely on the JSON parsing in calling methods
+        // to be the final judge if the output is supposed to be JSON.
+
+        return ['output' => $output, 'error' => null]; // Success, return the output
     }
 
     /**
      * Fetches raw video information from yt-dlp for a given URL.
      * The information is returned as a JSON-decoded associative array.
      *
-     * @param string $url The YouTube video URL.
+     * @param string $url The YouTube video URL. Input is sanitized.
      * @return array An associative array containing the raw video information on success,
-     *               or an array with an 'error' key (e.g., `['error' => 'Error message']`) on failure.
-     *               Failures can be due to command execution errors or JSON parsing issues.
+     *               or an array with an 'error_message' key (e.g., `['error_message' => 'Error message']`) on failure.
      */
     public function getVideoInfo($url) {
-        $escaped_url = escapeshellarg($url);
-        $command = "{$this->yt_dlp_path} -j --skip-download --no-playlist --no-warnings {$escaped_url}";
-        $json_output = $this->executeCommand($command);
+        // Sanitize URL before using it with escapeshellarg
+        $sanitized_url = sanitize_input($url);
+        if (empty($sanitized_url)) {
+            return ['error_message' => _t('error_invalid_url', 'Invalid or empty URL provided.')];
+        }
+        // Validate URL format (basic validation)
+        if (!filter_var($sanitized_url, FILTER_VALIDATE_URL)) {
+             return ['error_message' => _t('error_invalid_url_format', 'The provided URL is not valid.')];
+        }
 
-        if (!$json_output) {
-            return ['error' => _t('error_yt_dlp_execution_failed', 'Failed to execute video information command. Please check server configuration or yt-dlp installation.')];
+        $escaped_url = escapeshellarg($sanitized_url);
+        // Optimized options: -j for JSON, --skip-download, --no-playlist (if single video expected), --no-warnings
+        // Added --extractor-retries 3 and --socket-timeout 30 for robustness
+        $command = "{$this->yt_dlp_path} -j --skip-download --no-playlist --no-warnings --extractor-retries 3 --socket-timeout 30 {$escaped_url}";
+
+        $exec_result = $this->executeCommand($command);
+
+        if ($exec_result['error']) {
+            // Specific error from executeCommand
+            $error_key = 'error_yt_dlp_execution_failed';
+            if ($exec_result['error'] === 'yt_dlp_error') {
+                $error_key = 'error_yt_dlp_reported';
+            }
+             error_log("YtDlpWrapper::getVideoInfo: Error executing command. Type: {$exec_result['error']}. Message: {$exec_result['message']}. URL: {$sanitized_url}");
+            return ['error_message' => _t($error_key, $exec_result['message'])];
+        }
+
+        $json_output = $exec_result['output'];
+        if (empty($json_output)) {
+             error_log("YtDlpWrapper::getVideoInfo: Received empty JSON output from yt-dlp for URL: {$sanitized_url}");
+            return ['error_message' => _t('error_parsing_video_info_json', 'Failed to parse video information: No data received.')];
         }
 
         $video_info = json_decode($json_output, true);
-        if (json_last_error() !== JSON_ERROR_NONE || !$video_info || !isset($video_info['title'])) {
-            error_log("YtDlpWrapper::getVideoInfo: Failed to parse JSON. Error: " . json_last_error_msg() . ". JSON Output: " . substr($json_output, 0, 1000));
-            return ['error' => _t('error_parsing_video_info_json', 'Failed to parse video information. The data may be malformed or incomplete.')];
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            error_log("YtDlpWrapper::getVideoInfo: Failed to parse JSON. Error: " . json_last_error_msg() . ". URL: {$sanitized_url}. JSON Output: " . substr($json_output, 0, 1000));
+            return ['error_message' => _t('error_parsing_video_info_json_details', 'Failed to parse video information: ' . json_last_error_msg())];
         }
+
+        if (!$video_info || !isset($video_info['id']) || !isset($video_info['title'])) {
+             error_log("YtDlpWrapper::getVideoInfo: Essential video metadata (id, title) missing. URL: {$sanitized_url}. Data: " . substr($json_output, 0, 1000));
+            return ['error_message' => _t('error_video_info_incomplete', 'Video information is incomplete or missing essential data (like ID or title).')];
+        }
+
         return $video_info;
     }
 
@@ -108,14 +152,14 @@ class YtDlpWrapper {
      *               or processing video information fails.
      */
     public function getFormattableVideoInfo($url) {
+        // Input URL is sanitized by getVideoInfo
         $video_info = $this->getVideoInfo($url);
-        if (isset($video_info['error'])) {
-            return $video_info; // Propagate error
+        if (isset($video_info['error_message'])) {
+            return ['error' => $video_info['error_message']];
         }
 
-        $output_formats = [];
         $raw_formats = $video_info['formats'] ?? [];
-        // error_log("YtDlpWrapper - Raw formats from yt-dlp (before filtering): " . substr(print_r($raw_formats, true), 0, 10000)); // Per instruction, this one should be commented/deleted
+        $processed_formats = [];
 
         // Helper function to format filesize
         $format_filesize = function($bytes) {
@@ -126,190 +170,138 @@ class YtDlpWrapper {
         };
 
         // 1. Add MP3 Option (explicit conversion)
-        $output_formats[] = [
+        $processed_formats['mp3'] = [ // Use ID as key to prevent duplicates naturally
             'id' => 'mp3',
             'type' => 'audioonly',
             'category' => 'audio',
             'label' => _t('format_mp3_download', 'MP3 Audio'),
             'ext' => 'mp3',
             'resolution_or_bitrate' => _t('best_available_audio', 'Best Available'),
-            'filesize_str' => 'N/A',
+            'filesize_str' => 'N/A', // Filesize for MP3 is unknown until conversion
             'has_audio' => true,
             'has_video' => false,
             'yt_dlp_format_obj' => ['note' => 'MP3 conversion via yt-dlp -x']
         ];
 
-        // 2. Process raw formats from yt-dlp
         $desired_resolutions = ['2160p', '1440p', '1080p', '720p', '480p', '360p'];
-        $seen_video_audio_muxed = [];
+        $video_only_mp4_formats = []; // Store video-only MP4s for potential muxing
+        $best_m4a_for_muxing = null;
+        $seen_premuxed_resolutions = []; // Tracks resolutions for pre-muxed MP4s (e.g., "1080p")
 
+        // 2. Process raw formats from yt-dlp
         foreach ($raw_formats as $format) {
             $format_id = $format['format_id'] ?? null;
-            if (!$format_id) continue;
-
-            $ext = $format['ext'] ?? 'N/A';
-            $protocol = $format['protocol'] ?? '';
-            if (!in_array($protocol, ['http', 'https'])) {
+            if (!$format_id || !isset($format['protocol']) || !in_array($format['protocol'], ['http', 'https'])) {
                 continue;
             }
 
+            $ext = $format['ext'] ?? 'N/A';
             $vcodec = $format['vcodec'] ?? 'none';
             $acodec = $format['acodec'] ?? 'none';
-            $format_note = $format['format_note'] ?? ($format['resolution'] ?? null);
+            $format_note = $format['format_note'] ?? ($format['resolution'] ?? null); // Resolution string like "1080p"
             $height = (isset($format['height']) && is_numeric($format['height'])) ? (int)$format['height'] : null;
-
             $filesize = $format['filesize'] ?? ($format['filesize_approx'] ?? null);
             $filesize_str = $format_filesize($filesize);
 
-            $current_format_entry = null;
-
-            if ($ext === 'mp4' && $vcodec !== 'none' && $acodec !== 'none' && $height && $format_note && in_array($format_note, $desired_resolutions)) {
-                if (!isset($seen_video_audio_muxed[$format_note])) {
-                     $current_format_entry = [
+            // Collect best M4A audio stream for muxing
+            if ($ext === 'm4a' && $vcodec === 'none' && $acodec !== 'none') {
+                $current_abr = $format['abr'] ?? 0;
+                if ($best_m4a_for_muxing === null || $current_abr > ($best_m4a_for_muxing['yt_dlp_format_obj']['abr'] ?? 0)) {
+                    $best_m4a_for_muxing = [
                         'id' => $format_id,
-                        'type' => 'audiovideo', // Pre-muxed by YouTube
+                        'filesize' => $filesize,
+                        'yt_dlp_format_obj' => $format
+                    ];
+                }
+            }
+
+            // Process MP4 Video Formats
+            if ($ext === 'mp4' && $vcodec !== 'none' && $height && $format_note && in_array($format_note, $desired_resolutions)) {
+                if ($acodec !== 'none') { // Pre-muxed MP4 (video + audio)
+                    if (!isset($seen_premuxed_resolutions[$format_note])) {
+                        $processed_formats[$format_id] = [
+                            'id' => $format_id,
+                            'type' => 'audiovideo',
+                            'category' => 'video',
+                            'label' => 'MP4 ' . $format_note,
+                            'ext' => 'mp4',
+                            'resolution_or_bitrate' => $format_note,
+                            'filesize_str' => $filesize_str,
+                            'has_audio' => true,
+                            'has_video' => true,
+                            'yt_dlp_format_obj' => $format
+                        ];
+                        $seen_premuxed_resolutions[$format_note] = true;
+                    }
+                } else { // Video-only MP4
+                    // Store it, we might mux it later. Also add as a video-only option.
+                    $video_only_entry = [
+                        'id' => $format_id,
+                        'type' => 'videoonly',
                         'category' => 'video',
-                        'label' => 'MP4 ' . $format_note,
+                        'label' => 'MP4 ' . $format_note . ' (' . _t('video_only_label', 'Video Only') . ')',
                         'ext' => 'mp4',
                         'resolution_or_bitrate' => $format_note,
                         'filesize_str' => $filesize_str,
-                        'has_audio' => true,
+                        'has_audio' => false,
                         'has_video' => true,
                         'yt_dlp_format_obj' => $format
                     ];
-                    $seen_video_audio_muxed[$format_note] = true;
-                }
-            }
-            else if ($ext === 'mp4' && $vcodec !== 'none' && $acodec === 'none' && $height && $format_note && in_array($format_note, $desired_resolutions)) {
-                $current_format_entry = [
-                    'id' => $format_id,
-                    'type' => 'videoonly',
-                    'category' => 'video',
-                    'label' => 'MP4 ' . $format_note . ' (' . _t('video_only_label', 'Video Only') . ')',
-                    'ext' => 'mp4',
-                    'resolution_or_bitrate' => $format_note,
-                    'filesize_str' => $filesize_str,
-                    'has_audio' => false,
-                    'has_video' => true,
-                    'yt_dlp_format_obj' => $format
-                ];
-            }
-            /* // Start of block comment for M4A/Opus audio-only streams
-            else if ($vcodec === 'none' && $acodec !== 'none' && ($ext === 'm4a' || ($ext === 'webm' && strpos($acodec, 'opus') !== false))) {
-                $bitrate = $format['abr'] ?? null;
-                $label_detail = $ext === 'm4a' ? 'M4A' : 'Opus';
-                if ($bitrate) {
-                    $label_detail .= ' ~' . round($bitrate) . 'kbps';
-                }
-                // This $current_format_entry would be for M4A/Opus audio if not commented out
-                // $current_format_entry = [
-                //     'id' => $format_id,
-                //     'type' => 'audioonly',
-                //     'category' => 'audio',
-                //     'label' => $label_detail . ' (' . _t('audio_only_label', 'Audio Only') . ')',
-                //     'ext' => $ext,
-                //     'resolution_or_bitrate' => $bitrate ? round($bitrate) . 'kbps' : 'N/A',
-                //     'filesize_str' => $filesize_str,
-                //     'has_audio' => true,
-                //     'has_video' => false,
-                //     'yt_dlp_format_obj' => $format
-                // ];
-                // if ($current_format_entry) { $output_formats[] = $current_format_entry; }
-            }
-            */ // End of block comment
-
-            // Add the $current_format_entry to $output_formats if it was set (i.e., for video types from previous if/else if)
-            if ($current_format_entry) {
-                $output_formats[] = $current_format_entry;
-            }
-        }
-
-        // New section to create muxable video+audio combinations:
-        $muxable_video_formats = [];
-        // Search for the best M4A audio stream from RAW formats for muxing purposes
-        $best_m4a_for_muxing = null;
-        foreach ($raw_formats as $fmt_check) { // Iterate raw_formats
-            if (($fmt_check['ext'] ?? '') === 'm4a' && ($fmt_check['vcodec'] ?? 'none') === 'none' && ($fmt_check['acodec'] ?? 'none') !== 'none') {
-                if ($best_m4a_for_muxing === null) { // Simple selection: first M4A found
-                    $best_m4a_for_muxing = [ // Store only essential details needed for muxing logic
-                        'id' => $fmt_check['format_id'] ?? null,
-                        'filesize' => $fmt_check['filesize'] ?? ($fmt_check['filesize_approx'] ?? 0),
-                        'yt_dlp_format_obj' => $fmt_check // Keep original object
-                    ];
-                    // Ideally, compare bitrates (abr) to find the actual best M4A here.
-                    // For now, first one found is fine for testing the logic.
-                    // break; // Found one, use it. // Let's iterate all to find best based on ABR
-                } else {
-                    $current_abr_check = $fmt_check['abr'] ?? 0;
-                    $best_abr_so_far = $best_m4a_for_muxing['yt_dlp_format_obj']['abr'] ?? 0;
-                    if ($current_abr_check > $best_abr_so_far) {
-                         $best_m4a_for_muxing = [
-                            'id' => $fmt_check['format_id'] ?? null,
-                            'filesize' => $fmt_check['filesize'] ?? ($fmt_check['filesize_approx'] ?? 0),
-                            'yt_dlp_format_obj' => $fmt_check
-                        ];
+                    $processed_formats[$format_id] = $video_only_entry;
+                    // Keep a reference for muxing, keyed by resolution for easy lookup
+                    if (!isset($video_only_mp4_formats[$format_note]) ||
+                        ($filesize ?? 0) > ($video_only_mp4_formats[$format_note]['yt_dlp_format_obj']['filesize'] ?? ($video_only_mp4_formats[$format_note]['yt_dlp_format_obj']['filesize_approx'] ?? 0))) {
+                        // Prefer higher quality (larger filesize) video-only stream for a given resolution if multiple exist
+                        $video_only_mp4_formats[$format_note] = $video_only_entry;
                     }
                 }
             }
         }
 
-        // Populate $muxable_video_formats from $output_formats (which now only contains video types after audio filtering)
-        foreach ($output_formats as $fmt) {
-            if ($fmt['type'] === 'videoonly' && $fmt['ext'] === 'mp4') {
-                preg_match('/(\d+)p/', $fmt['resolution_or_bitrate'], $matches);
-                $height_mux = isset($matches[1]) ? (int)$matches[1] : 0;
-                if ($height_mux > 0) {
-                    $muxable_video_formats[] = ['height' => $height_mux, 'format' => $fmt];
-                }
-            }
-        }
+        // 3. Create muxed formats if a suitable M4A audio stream was found
+        if ($best_m4a_for_muxing && !empty($video_only_mp4_formats)) {
+            $resolutions_to_mux_preference = ['1080p', '720p', '480p', '360p']; // Desired muxed outputs
 
+            foreach ($resolutions_to_mux_preference as $res_pref) {
+                if (isset($video_only_mp4_formats[$res_pref])) {
+                    $video_format_entry = $video_only_mp4_formats[$res_pref];
+                    $video_stream_data = $video_format_entry['yt_dlp_format_obj'];
+                    $audio_stream_data = $best_m4a_for_muxing['yt_dlp_format_obj'];
 
-        if ($best_m4a_for_muxing && !empty($muxable_video_formats)) {
-            usort($muxable_video_formats, function($a, $b) {
-                return $b['height'] - $a['height'];
-            });
+                    $combined_id = $video_stream_data['format_id'] . '+' . $audio_stream_data['format_id'];
 
-            $resolutions_to_mux = ['1080p', '720p', '480p', '360p'];
-            $muxed_formats_added_resolution = [];
+                    // Avoid adding if a pre-muxed version of this resolution already exists and is preferred
+                    if (isset($seen_premuxed_resolutions[$res_pref])) {
+                        // Potentially add logic here if muxed should override pre-muxed, or be an alternative
+                        // For now, if a pre-muxed one exists, we assume it's good enough.
+                        continue;
+                    }
 
-            foreach ($muxable_video_formats as $video_entry) {
-                $video_format = $video_entry['format'];
-                $video_resolution_note = $video_format['resolution_or_bitrate'];
+                    $video_filesize_bytes = $video_stream_data['filesize'] ?? ($video_stream_data['filesize_approx'] ?? 0);
+                    $audio_filesize_bytes = $audio_stream_data['filesize'] ?? ($audio_stream_data['filesize_approx'] ?? 0);
+                    $combined_filesize_str = ($video_filesize_bytes > 0 && $audio_filesize_bytes > 0)
+                                             ? $format_filesize($video_filesize_bytes + $audio_filesize_bytes)
+                                             : 'N/A';
 
-                if (in_array($video_resolution_note, $resolutions_to_mux) && !isset($muxed_formats_added_resolution[$video_resolution_note])) {
-                    $combined_id = $video_format['id'] . '+' . $best_m4a_for_muxing['id'];
-
-                    $video_filesize_bytes = $video_format['yt_dlp_format_obj']['filesize'] ?? ($video_format['yt_dlp_format_obj']['filesize_approx'] ?? 0);
-                    $audio_filesize_bytes = $best_m4a_for_muxing['filesize']; // Use filesize from our prepared $best_m4a_for_muxing
-                    $combined_filesize_str = ($video_filesize_bytes > 0 && $audio_filesize_bytes > 0) ? $format_filesize($video_filesize_bytes + $audio_filesize_bytes) : 'N/A';
-
-                    $output_formats[] = [ // Add to the main $output_formats array before final filtering and sorting
+                    $processed_formats[$combined_id] = [
                         'id' => $combined_id,
                         'type' => 'audiovideo_muxed',
                         'category' => 'video',
-                        'label' => 'MP4 ' . $video_resolution_note . ' (' . _t('muxed_audio_label', 'Best Audio') . ')',
+                        'label' => 'MP4 ' . $res_pref . ' (' . _t('muxed_audio_label', 'Best Audio') . ')',
                         'ext' => 'mp4',
-                        'resolution_or_bitrate' => $video_resolution_note,
+                        'resolution_or_bitrate' => $res_pref,
                         'filesize_str' => $combined_filesize_str,
                         'has_audio' => true,
                         'has_video' => true,
-                        'yt_dlp_format_obj' => ['video_stream' => $video_format['yt_dlp_format_obj'], 'audio_stream' => $best_m4a_for_muxing['yt_dlp_format_obj']]
+                        'yt_dlp_format_obj' => ['video_stream' => $video_stream_data, 'audio_stream' => $audio_stream_data]
                     ];
-                    $muxed_formats_added_resolution[$video_resolution_note] = true;
                 }
             }
         }
 
-        $final_formats = [];
-        $seen_ids = [];
-        foreach ($output_formats as $fmt) {
-            if (!isset($seen_ids[$fmt['id']])) {
-                $final_formats[] = $fmt;
-                $seen_ids[$fmt['id']] = true;
-            }
-        }
+        $final_formats = array_values($processed_formats); // Convert associative array to indexed array
 
+        // 4. Sort the formats
         usort($final_formats, function($a, $b) {
             if ($a['category'] !== $b['category']) {
                 return $a['category'] === 'audio' ? -1 : 1;
@@ -341,9 +333,6 @@ class YtDlpWrapper {
             return 0;
         });
 
-        // Ensure the temporary log for JS formats is active for testing this new structure
-        // error_log("YtDlpWrapper - Final Formats (for JS with Muxing): " . print_r($final_formats, true)); // Per instruction, this one should be commented/deleted
-
         // Safely determine thumbnail URL and duration string from the original $video_info
         $thumb_from_video_info = $video_info['thumbnail'] ?? null;
         if (!$thumb_from_video_info && isset($video_info['thumbnails']) && is_array($video_info['thumbnails']) && count($video_info['thumbnails']) > 0 && isset($video_info['thumbnails'][0]['url'])) {
@@ -351,9 +340,13 @@ class YtDlpWrapper {
         }
 
         return [
-            'title' => sanitize_input($video_info['title']),
-            'thumbnail_url' => sanitize_input($thumb_from_video_info ?? ''),
-            'duration_string' => sanitize_input($video_info['duration_string'] ?? _t('duration_not_available', 'N/A')),
+            // Title, thumbnail, and duration_string are sanitized if they come from $video_info,
+            // which should now consistently use sanitize_input on its sources or be trusted yt-dlp JSON structure.
+            // The $video_info itself comes from yt-dlp and is generally structured data.
+            // Title specifically needs sanitization if displayed.
+            'title' => isset($video_info['title']) ? sanitize_input($video_info['title']) : _t('title_not_available', 'N/A'),
+            'thumbnail_url' => isset($thumb_from_video_info) ? sanitize_input($thumb_from_video_info) : '',
+            'duration_string' => isset($video_info['duration_string']) ? sanitize_input($video_info['duration_string']) : _t('duration_not_available', 'N/A'),
             'formats' => $final_formats,
         ];
     }
@@ -371,30 +364,52 @@ class YtDlpWrapper {
      * @return void This method does not return a value as it terminates script execution.
      */
     public function streamMedia($url, $format_id, $video_title, $fallback_extension = 'mp4') {
-        $escaped_url = escapeshellarg($url);
-        $video_title_sanitized = preg_replace('/[^A-Za-z0-9_\-]/', '_', $video_title);
+        // Sanitize inputs
+        $sanitized_url = sanitize_input($url);
+        if (empty($sanitized_url) || !filter_var($sanitized_url, FILTER_VALIDATE_URL)) {
+            error_log("YtDlpWrapper::streamMedia: Invalid URL provided: " . $url);
+            // Optionally, display an error page or message here instead of a raw die.
+            die(_t('error_invalid_url_streaming', 'Invalid URL provided for streaming.'));
+        }
 
-        $final_extension = $fallback_extension;
+        $sanitized_format_id = sanitize_input($format_id);
+        // Basic validation for format_id (alphanumeric, '+', '-', '_').
+        // This is important as it's used in a shell command. escapeshellarg is used later for the format string part.
+        if (!preg_match('/^[a-zA-Z0-9_+\-]+$/', $sanitized_format_id)) {
+             error_log("YtDlpWrapper::streamMedia: Invalid format_id provided: " . $format_id);
+             die(_t('error_invalid_format_id_streaming', 'Invalid format ID.'));
+        }
+
+        $sanitized_video_title = sanitize_input($video_title); // Already good for filename
+        $video_title_for_filename = preg_replace('/[^A-Za-z0-9_\-.]/', '_', $sanitized_video_title);
+
+
+        $escaped_url = escapeshellarg($sanitized_url);
+        $final_extension = sanitize_input($fallback_extension); // Sanitize fallback_extension
         $command_options = "";
 
-        if ($format_id === 'mp3') {
+        if ($sanitized_format_id === 'mp3') {
             $command_options = "-f bestaudio -x --audio-format mp3";
             $final_extension = 'mp3';
         } else {
-            // If $format_id contains '+', it's a muxed request (e.g., "VIDEO_ID+AUDIO_ID")
-            if (strpos($format_id, '+') !== false) {
-                // yt-dlp handles "ID+ID" format string directly for muxing
-                $command_options = "-f " . escapeshellarg($format_id);
-                $final_extension = 'mp4'; // Muxed output is typically MP4
+            // Format ID is now part of $command_options string that will be escaped as a whole if needed,
+            // but individual parts like format_id should be safe.
+            // Using escapeshellarg on the format_id part of the -f option.
+            $escaped_format_id_option = escapeshellarg($sanitized_format_id);
+            if (strpos($sanitized_format_id, '+') !== false) {
+                $command_options = "-f {$escaped_format_id_option}";
+                $final_extension = 'mp4';
             } else {
-                // Standard single format ID
-                $command_options = "-f " . escapeshellarg($format_id);
-                // Attempt to determine the correct extension if not MP3 or muxed
-                $video_data_for_ext_check = $this->getVideoInfo($url);
-                if (!isset($video_data_for_ext_check['error']) && isset($video_data_for_ext_check['formats']) && is_array($video_data_for_ext_check['formats'])) {
+                $command_options = "-f {$escaped_format_id_option}";
+                // Attempt to determine the correct extension
+                // Note: Calling getVideoInfo here again is inefficient.
+                // Consider passing extension or relying on fallback for non-standard/muxed cases.
+                // For now, kept original logic but with sanitization.
+                $video_data_for_ext_check = $this->getVideoInfo($sanitized_url); // uses sanitized URL
+                if (!isset($video_data_for_ext_check['error_message']) && isset($video_data_for_ext_check['formats']) && is_array($video_data_for_ext_check['formats'])) {
                     foreach ($video_data_for_ext_check['formats'] as $fmt) {
-                        if (isset($fmt['format_id']) && $fmt['format_id'] === $format_id && isset($fmt['ext'])) {
-                            $final_extension = $fmt['ext'];
+                        if (isset($fmt['format_id']) && $fmt['format_id'] === $sanitized_format_id && isset($fmt['ext'])) {
+                            $final_extension = sanitize_input($fmt['ext']); // Sanitize extension from yt-dlp
                             break;
                         }
                     }
@@ -402,8 +417,15 @@ class YtDlpWrapper {
             }
         }
 
-        $filename = $video_title_sanitized . '.' . $final_extension;
-        $full_command = "{$this->yt_dlp_path} {$command_options} -o - {$escaped_url}";
+        $filename = $video_title_for_filename . '.' . $final_extension;
+        // Added --no-warnings, --socket-timeout, --retries for streaming
+        $full_command = "{$this->yt_dlp_path} {$command_options} --no-warnings --socket-timeout 30 --retries 3 -o - {$escaped_url}";
+
+        // Ensure headers are not already sent
+        if (headers_sent($file, $line)) {
+            error_log("YtDlpWrapper::streamMedia: Headers already sent in $file on line $line. Cannot stream file.");
+            die(_t('error_headers_sent_streaming', 'Cannot stream file: Headers already sent.'));
+        }
 
         header('Content-Type: application/octet-stream');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
@@ -430,11 +452,29 @@ class YtDlpWrapper {
      *               Returns an empty array if the command succeeds but no results are found.
      */
     public function searchVideos($query) {
-        $command = sprintf("%s \"ytsearch5:%s\" --dump-json --no-playlist --no-warnings", $this->yt_dlp_path, escapeshellarg($query));
-        $search_output_json_lines = $this->executeCommand($command);
+        $sanitized_query = sanitize_input($query);
+        if (empty($sanitized_query)) {
+            return ['error_message' => _t('error_empty_search_query', 'Search query cannot be empty.')];
+        }
 
-        if ($search_output_json_lines === false) {
-            return ['error' => _t('error_yt_dlp_search_execution_failed', 'Failed to execute video search command. Please check server configuration or yt-dlp installation.')];
+        // Use escapeshellarg for the query part that is embedded in the ytsearch string.
+        // The number of results "ytsearch5:" can be made configurable if needed.
+        // Added --extractor-retries 3 and --socket-timeout 30
+        $command = sprintf("%s \"ytsearch5:%s\" --dump-json --no-playlist --no-warnings --extractor-retries 3 --socket-timeout 30", $this->yt_dlp_path, escapeshellarg($sanitized_query));
+
+        $exec_result = $this->executeCommand($command);
+
+        if ($exec_result['error']) {
+            error_log("YtDlpWrapper::searchVideos: Error executing search. Type: {$exec_result['error']}. Message: {$exec_result['message']}. Query: {$sanitized_query}");
+            return ['error_message' => _t('error_yt_dlp_search_execution_failed', 'Failed to execute video search: ' . $exec_result['message'])];
+        }
+
+        $search_output_json_lines = $exec_result['output'];
+        if (empty(trim($search_output_json_lines))) {
+            // This is not necessarily an error, could be no results found.
+            // Log for debugging, but return empty results array.
+            error_log("YtDlpWrapper::searchVideos: yt-dlp returned empty output for query: " . $sanitized_query);
+            return [];
         }
 
         $results = [];
@@ -446,32 +486,44 @@ class YtDlpWrapper {
             }
             $video_data = json_decode($line, true);
             if (json_last_error() === JSON_ERROR_NONE && is_array($video_data) && isset($video_data['id'])) {
-                $id = $video_data['id'] ?? null;
+                // All individual fields from yt-dlp output that are displayed to user should be sanitized.
+                $id = sanitize_input($video_data['id'] ?? null);
 
-                $title = $video_data['title'] ?? _t('search_title_na', 'N/A');
+                $title = sanitize_input($video_data['title'] ?? _t('search_title_na', 'N/A'));
 
-                $thumbnail = $video_data['thumbnail'] ?? null;
-                if (!$thumbnail && isset($video_data['thumbnails']) && is_array($video_data['thumbnails']) && count($video_data['thumbnails']) > 0 && isset($video_data['thumbnails'][0]['url'])) {
-                    $thumbnail = $video_data['thumbnails'][0]['url'];
+                $thumbnail_url = ''; // Default empty
+                if (!empty($video_data['thumbnail'])) {
+                    $thumbnail_url = sanitize_input($video_data['thumbnail']);
+                } elseif (isset($video_data['thumbnails']) && is_array($video_data['thumbnails']) && !empty($video_data['thumbnails'])) {
+                    // Try to get the last thumbnail in the list (often highest quality)
+                    $last_thumbnail = end($video_data['thumbnails']);
+                    if (isset($last_thumbnail['url'])) {
+                        $thumbnail_url = sanitize_input($last_thumbnail['url']);
+                    } elseif (isset($video_data['thumbnails'][0]['url'])) { // Fallback to first if 'url' in last is not set
+                        $thumbnail_url = sanitize_input($video_data['thumbnails'][0]['url']);
+                    }
                 }
 
-                $uploader = $video_data['uploader'] ?? _t('search_uploader_na', 'N/A');
-                $duration_string = $video_data['duration_string'] ?? _t('search_duration_na', 'N/A');
+                $uploader = sanitize_input($video_data['uploader'] ?? _t('search_uploader_na', 'N/A'));
+                $duration_string = sanitize_input($video_data['duration_string'] ?? _t('search_duration_na', 'N/A'));
+                $youtube_url = 'https://www.youtube.com/watch?v=' . $id; // id is already sanitized
 
                 $results[] = [
-                    'id' => sanitize_input($id),
-                    'title' => sanitize_input($title),
-                    'thumbnail_url' => sanitize_input($thumbnail ?? ''),
-                    'uploader' => sanitize_input($uploader),
-                    'duration_string' => sanitize_input($duration_string),
-                    'url' => 'https://www.youtube.com/watch?v=' . sanitize_input($id)
+                    'id' => $id,
+                    'title' => $title,
+                    'thumbnail_url' => $thumbnail_url,
+                    'uploader' => $uploader,
+                    'duration_string' => $duration_string,
+                    'url' => $youtube_url
                 ];
             } else {
-                error_log("YtDlpWrapper::searchVideos: Failed to parse JSON line or missing 'id'. Error: " . json_last_error_msg() . ". Line: " . $line);
+                error_log("YtDlpWrapper::searchVideos: Failed to parse JSON line or missing 'id' for query '{$sanitized_query}'. Error: " . json_last_error_msg() . ". Line: " . substr($line, 0, 200));
+                // Optionally, skip this entry or add a placeholder with an error.
+                // For now, just skip.
                 continue;
             }
         }
-        return $results;
+        return $results; // Contains sanitized data
     }
 }
 

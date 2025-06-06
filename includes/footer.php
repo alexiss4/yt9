@@ -6,8 +6,8 @@
 <h4 class="font-semibold text-white mb-2">Quick Links</h4>
 <ul class="space-y-1">
 <li><a class="hover:text-blue-400" href="index.php">Home</a></li>
-<li><a class="hover:text-blue-400" href="#">YouTube Video Downloader</a></li>
-<li><a class="hover:text-blue-400" href="#">YouTube Shorts Downloader</a></li>
+<li><a class="hover:text-blue-400" href="javascript:void(0);">YouTube Video Downloader (Main Page)</a></li>
+<li><a class="hover:text-blue-400" href="javascript:void(0);">YouTube Shorts Downloader (Feature)</a></li>
 </ul>
 </div>
 <div class="mt-8 md:mt-0 md:text-right">
