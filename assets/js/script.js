@@ -29,8 +29,8 @@ document.addEventListener('DOMContentLoaded', () => {
      * @param {HTMLElement} container - The HTML element to display the loading message in.
      */
     function createLoadingMessage(message, container) {
-        container.innerHTML = `<div class="flex items-center justify-center text-gray-600 py-4">
-                                <svg class="animate-spin h-5 w-5 mr-3 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        container.innerHTML = `<div class="flex items-center justify-center text-slate-500 py-4">
+                                <svg class="animate-spin h-5 w-5 mr-3 text-sky-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
@@ -223,14 +223,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         const detailsDiv = document.createElement('div');
                         detailsDiv.className = 'flex-grow';
                         detailsDiv.innerHTML = `
-                            <h4 class="text-lg font-semibold text-blue-600">${video.title}</h4>
-                            <p class="text-sm text-gray-600">By: ${video.uploader || 'N/A'}</p>
-                            <p class="text-sm text-gray-500">Duration: ${video.duration_string || 'N/A'}</p>
+                            <h4 class="text-lg font-semibold text-sky-600">${video.title}</h4>
+                            <p class="text-sm text-slate-600">By: ${video.uploader || 'N/A'}</p>
+                            <p class="text-sm text-slate-500">Duration: ${video.duration_string || 'N/A'}</p>
                         `;
 
                         // "Get Download Links" button for each search result
                         const getFormatsBtn = document.createElement('button');
-                        getFormatsBtn.className = 'get-formats-btn mt-3 py-2 px-4 bg-green-500 text-white rounded hover:bg-green-600 transition duration-150 text-sm';
+                        getFormatsBtn.className = 'get-formats-btn mt-3 py-2 px-4 bg-emerald-500 text-white rounded hover:bg-emerald-600 transition duration-150 text-sm';
                         getFormatsBtn.textContent = 'Get Download Links';
                         getFormatsBtn.dataset.videoUrl = video.url; 
                         // Store other details if needed for displayVideoDownloadOptions context, though not strictly used by fetchVideoInfo
@@ -246,7 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     addFormatButtonListeners(); // Add listeners to the newly created buttons
                 } else {
                     // Handle no results found
-                    container.innerHTML = '<p class="text-gray-600 text-center py-4">No videos found for your query. Please try different keywords.</p>';
+                    container.innerHTML = '<p class="text-slate-600 text-center py-4">No videos found for your query. Please try different keywords.</p>';
                 }
             })
             .catch(error => { // Catch network errors or errors thrown from .then()
@@ -295,7 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data.title) {
             const titleElement = document.createElement('h3');
             // Use slightly different styling based on context (index vs download page)
-            titleElement.className = isDownloadPage ? 'text-2xl font-bold text-gray-800 mb-2' : 'text-xl font-semibold mb-3 text-gray-800 text-center';
+            titleElement.className = isDownloadPage ? 'text-2xl font-bold text-slate-800 mb-2' : 'text-xl font-semibold mb-3 text-slate-800 text-center';
             titleElement.textContent = isDownloadPage ? `Download Video: ${data.title}` : data.title;
             container.appendChild(titleElement);
         }
@@ -314,7 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (data.formats && data.formats.length > 0) {
             const formatsTitle = document.createElement('h4');
-            formatsTitle.className = isDownloadPage ? 'text-xl font-semibold text-gray-700 mb-4 mt-5' : 'text-lg font-medium text-gray-700 mb-3 mt-5 text-center';
+            formatsTitle.className = isDownloadPage ? 'text-xl font-semibold text-slate-700 mb-4 mt-5' : 'text-lg font-medium text-slate-700 mb-3 mt-5 text-center';
             formatsTitle.textContent = 'Available Download Options:';
             container.appendChild(formatsTitle);
 
@@ -328,13 +328,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (isDownloadPage) {
                     const listItem = document.createElement('li');
                     listItem.className = 'p-3 bg-gray-50 rounded-md shadow-sm hover:bg-gray-100 transition duration-150';
-                    linkElement.className = 'block text-blue-600 hover:text-blue-800 font-medium';
+                    linkElement.className = 'block text-sky-600 hover:text-sky-700 font-medium';
                     let desc = format.description || `${format.ext} - ${format.resolution || format.format_note}`;
                     linkElement.innerHTML = `<span class="material-icons text-sm mr-2 align-middle">${(format.id || format.format_id) === 'mp3' || (format.resolution === 'Audio' || (format.label && format.label.toLowerCase().includes('audio')) ) ? 'audiotrack' : 'videocam'}</span> ${desc}`;
                     listItem.appendChild(linkElement);
                     listElement.appendChild(listItem);
                 } else {
-                    linkElement.className = 'py-2 px-4 bg-green-500 text-white rounded hover:bg-green-600 my-1 inline-block text-sm shadow transition duration-150 ease-in-out transform hover:-translate-y-1';
+                    linkElement.className = 'py-2 px-4 bg-emerald-500 text-white rounded hover:bg-emerald-600 my-1 inline-block text-sm shadow transition duration-150 ease-in-out transform hover:-translate-y-1';
                     linkElement.textContent = format.label || `${format.ext.toUpperCase()} ${format.url_quality || (format.id || format.format_id)}`;
                     const icon = document.createElement('span');
                     icon.className = 'material-icons text-sm mr-1 align-middle';
@@ -345,7 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             container.appendChild(listElement);
         } else {
-            container.innerHTML += '<p class="text-gray-600 text-center py-4">No suitable download formats found for this video. It might be a livestream or have unusual encoding.</p>';
+            container.innerHTML += '<p class="text-slate-600 text-center py-4">No suitable download formats found for this video. It might be a livestream or have unusual encoding.</p>';
         }
     }
 });

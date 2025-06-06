@@ -25,8 +25,8 @@ $grid_cols_class = $grid_cols_class ?? 'md:grid-cols-3';
         <?php if (isset($feature['icon'])): ?>
         <span class="material-icons text-5xl text-blue-500 mb-4"><?php echo htmlspecialchars($feature['icon']); ?></span>
         <?php endif; ?>
-        <h3 class="text-xl font-semibold text-gray-800 mb-2"><?php echo htmlspecialchars($feature['title']); ?></h3>
-        <p class="text-gray-600"><?php echo htmlspecialchars($feature['description']); ?></p>
+        <h3 class="text-xl font-semibold text-slate-800 mb-2"><?php echo htmlspecialchars($feature['title']); ?></h3>
+        <p class="text-slate-600"><?php echo htmlspecialchars($feature['description']); ?></p>
     </div>
     <?php endforeach; ?>
 </div>

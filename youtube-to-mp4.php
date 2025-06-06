@@ -6,8 +6,8 @@
     <section class="bg-gradient-to-b from-blue-100 to-blue-50 py-16">
         <div class="container mx-auto px-6 text-center">
             <div class="bg-white p-8 md:p-12 rounded-xl shadow-xl max-w-3xl mx-auto">
-                <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4"><?php echo _t('yt_to_mp4_title', 'YouTube To Mp4 Converter'); ?></h1>
-                <p class="text-gray-600 mb-8"><?php echo _t('yt_to_mp4_description', 'Download and convert YouTube videos to MP4 format in various resolutions.'); ?></p>
+                <h1 class="text-3xl md:text-4xl font-bold text-slate-800 mb-4"><?php echo _t('yt_to_mp4_title', 'YouTube To Mp4 Converter'); ?></h1>
+                <p class="text-slate-600 mb-8"><?php echo _t('yt_to_mp4_description', 'Download and convert YouTube videos to MP4 format in various resolutions.'); ?></p>
                 <?php
                 $form_id = 'video-url-form-mp4'; 
                 $input_placeholder = _t('enter_youtube_url_placeholder', 'Paste YouTube video link here');
@@ -25,7 +25,7 @@
 
     <section class="py-16 bg-white">
         <div class="container mx-auto px-6">
-            <h2 class="text-3xl font-bold text-gray-800 text-center mb-4"><?php echo _t('yt_to_mp4_features_title', 'Features of Our YouTube to MP4 Converter'); ?></h2>
+            <h2 class="text-3xl font-bold text-slate-800 text-center mb-4"><?php echo _t('yt_to_mp4_features_title', 'Features of Our YouTube to MP4 Converter'); ?></h2>
             <?php
             $features_list = [
                 ['icon' => 'personal_video', 'title' => _t('feature_high_resolution_title', 'High Resolution Video'), 'description' => _t('feature_high_resolution_desc', 'Download MP4 videos in resolutions up to 4K and 8K where available.')],

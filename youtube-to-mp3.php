@@ -7,8 +7,8 @@
     <section class="bg-gradient-to-b from-blue-100 to-blue-50 py-16">
         <div class="container mx-auto px-6 text-center">
             <div class="bg-white p-8 md:p-12 rounded-xl shadow-xl max-w-3xl mx-auto">
-                <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4"><?php echo _t('yt_to_mp3_title', 'YouTube To Mp3 Converter'); ?></h1>
-                <p class="text-gray-600 mb-8"><?php echo _t('yt_to_mp3_description', 'Convert YouTube videos to MP3 format quickly and easily.'); ?></p>
+                <h1 class="text-3xl md:text-4xl font-bold text-slate-800 mb-4"><?php echo _t('yt_to_mp3_title', 'YouTube To Mp3 Converter'); ?></h1>
+                <p class="text-slate-600 mb-8"><?php echo _t('yt_to_mp3_description', 'Convert YouTube videos to MP3 format quickly and easily.'); ?></p>
                 <?php
                 $form_id = 'video-url-form-mp3'; 
                 $input_placeholder = _t('enter_youtube_url_placeholder', 'Paste YouTube video link here');
@@ -26,7 +26,7 @@
 
     <section class="py-16 bg-white">
         <div class="container mx-auto px-6">
-            <h2 class="text-3xl font-bold text-gray-800 text-center mb-4"><?php echo _t('yt_to_mp3_features_title', 'Features of Our YouTube to MP3 Converter'); ?></h2>
+            <h2 class="text-3xl font-bold text-slate-800 text-center mb-4"><?php echo _t('yt_to_mp3_features_title', 'Features of Our YouTube to MP3 Converter'); ?></h2>
             <?php
             $features_list = [
                 ['icon' => 'high_quality', 'title' => _t('feature_high_quality_audio_title', 'High Quality Audio'), 'description' => _t('feature_high_quality_audio_desc', 'Extract MP3 audio from YouTube videos in the best available quality.')],
