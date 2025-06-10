@@ -396,6 +396,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 sectionDiv.appendChild(sectionTitle);
 
                 const table = document.createElement('table');
+                // w-full is already present. No change needed here based on this specific request part.
                 table.className = 'w-full text-sm border-collapse';
 
                 const tbody = document.createElement('tbody');
@@ -407,7 +408,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     const tdQuality = document.createElement('td');
-                    tdQuality.className = 'p-2 border border-gray-300 text-left font-medium';
+                    // Added whitespace-normal break-words min-w-[120px]
+                    tdQuality.className = 'p-2 border border-gray-300 text-left font-medium whitespace-normal break-words min-w-[120px]';
                     let qualityHtml = format.label || format.resolution_or_bitrate || format.id;
                     if (format.category === 'video') {
                         const audioIconText = format.has_audio ?
@@ -421,7 +423,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     tr.appendChild(tdQuality);
 
                     const tdFilesize = document.createElement('td');
-                    tdFilesize.className = 'p-2 border border-gray-300 text-center text-gray-600';
+                    // Added whitespace-nowrap min-w-[80px]
+                    tdFilesize.className = 'p-2 border border-gray-300 text-center text-gray-600 whitespace-nowrap min-w-[80px]';
                     tdFilesize.textContent = format.filesize_str || 'N/A';
                     tr.appendChild(tdFilesize);
 
@@ -442,7 +445,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 if (isVideoTable && formats.length > videoFormatsToShowInitially) {
                     const showMoreButton = document.createElement('button');
-                    showMoreButton.className = 'mt-2 py-1 px-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded text-xs w-full';
+                    // Changed py-1 px-3 to py-2 px-4 and text-xs to text-sm
+                    showMoreButton.className = 'mt-2 py-2 px-4 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded text-sm w-full';
                     showMoreButton.textContent = (window.siteTranslations && window.siteTranslations['show_more_button_js']) || 'SHOW MORE';
                     let allShown = false;
 
@@ -482,4 +486,111 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
     } // End of displayVideoDownloadOptions
+
+    // Language Switcher Logic - REVISED
+    const desktopLangButtonWrapper = document.getElementById('language-switcher');
+    // mobileLangButtonWrapper is not used in the new logic as mobileLangButton is fetched by ID directly
+    // and the dropdown is no longer appended to it.
+
+    const desktopLangButton = desktopLangButtonWrapper ? desktopLangButtonWrapper.querySelector('button') : null;
+    const mobileLangButton = document.getElementById('mobile-language-switcher-button');
+    const langDropdown = document.getElementById('language-dropdown');
+
+    function openLanguageDropdown(buttonTriggered) {
+        if (!langDropdown || !buttonTriggered) return;
+
+        const buttonRect = buttonTriggered.getBoundingClientRect();
+        // langDropdown's offsetParent should be the main <nav> which has position:relative
+        const navElement = document.getElementById('main-navbar'); // Changed to select by ID
+        if (!navElement) return;
+        const navRect = navElement.getBoundingClientRect();
+
+        // Calculate 'top' relative to the <nav> element
+        langDropdown.style.top = (buttonRect.bottom - navRect.top) + 'px';
+
+        if (buttonTriggered === mobileLangButton) {
+            // For mobile, rely on CSS classes 'left-4 right-4' for width
+            langDropdown.style.left = '';
+            langDropdown.style.right = '';
+            langDropdown.style.width = '';
+        } else { // Desktop button
+            const buttonRightRelativeToNav = buttonRect.right - navRect.left;
+            const desktopDropdownWidth = 192; // md:w-48 is 12rem = 192px
+            langDropdown.style.left = (buttonRightRelativeToNav - desktopDropdownWidth) + 'px';
+            langDropdown.style.right = 'auto';
+            langDropdown.style.width = desktopDropdownWidth + 'px';
+        }
+
+        langDropdown.classList.remove('hidden');
+        buttonTriggered.setAttribute('aria-expanded', 'true');
+        // Sync ARIA for the other button
+        const otherButton = (buttonTriggered === desktopLangButton) ? mobileLangButton : desktopLangButton;
+        if (otherButton) {
+            otherButton.setAttribute('aria-expanded', 'true');
+        }
+    }
+
+    function closeLanguageDropdown() {
+        if (!langDropdown) return;
+        langDropdown.classList.add('hidden');
+        // Reset inline styles to allow CSS classes to take over positioning and width
+        langDropdown.style.top = '';
+        langDropdown.style.left = '';
+        langDropdown.style.right = '';
+        langDropdown.style.width = '';
+
+        if (desktopLangButton) {
+            desktopLangButton.setAttribute('aria-expanded', 'false');
+        }
+        if (mobileLangButton) {
+            mobileLangButton.setAttribute('aria-expanded', 'false');
+        }
+    }
+
+    if (desktopLangButton) { // desktopLangButtonWrapper check is implicitly done by desktopLangButton existence
+        desktopLangButton.addEventListener('click', (event) => {
+            event.stopPropagation();
+            if (langDropdown.classList.contains('hidden')) {
+                openLanguageDropdown(desktopLangButton);
+            } else {
+                closeLanguageDropdown();
+            }
+        });
+    }
+
+    if (mobileLangButton) { // mobileLangButtonWrapper check is not needed
+        mobileLangButton.addEventListener('click', (event) => {
+            event.stopPropagation();
+            if (langDropdown.classList.contains('hidden')) {
+                openLanguageDropdown(mobileLangButton);
+            } else {
+                closeLanguageDropdown();
+            }
+        });
+    }
+
+    // Close dropdown if clicked outside
+    window.addEventListener('click', function(e) {
+        if (langDropdown && !langDropdown.classList.contains('hidden')) {
+            const clickedOnDesktopButton = desktopLangButton ? desktopLangButton.contains(e.target) : false;
+            const clickedOnMobileButton = mobileLangButton ? mobileLangButton.contains(e.target) : false;
+
+            if (!clickedOnDesktopButton && !clickedOnMobileButton && !langDropdown.contains(e.target)) {
+                closeLanguageDropdown();
+            }
+        }
+    });
+    // --- Language Switcher Logic --- END ---
+
+    // Mobile menu toggle
+    const mobileMenuButton = document.getElementById('mobile-menu-toggle');
+    const mobileMenu = document.getElementById('mobile-menu');
+
+    if (mobileMenuButton && mobileMenu) {
+        mobileMenuButton.addEventListener('click', () => {
+            const isMenuOpen = !mobileMenu.classList.contains('hidden');
+            mobileMenu.classList.toggle('hidden');
+            mobileMenuButton.setAttribute('aria-expanded', !isMenuOpen);
+        });
+    }
 });
