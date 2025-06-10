@@ -1,6 +1,7 @@
 <?php
 // languages/es.php
 $lang = [
-    'lang_flag_emoji' => '🇪🇸'
+    'lang_code' => 'es',
+    'lang_flag_image' => 'assets/images/flags/es.png',
 ];
 ?>

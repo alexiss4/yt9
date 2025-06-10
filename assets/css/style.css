@@ -5,10 +5,11 @@
 }
 
 /* Optional: Style for the dropdown if it becomes very long */
-#language-dropdown {
-    max-height: 300px; /* Adjust as needed */
-    overflow-y: auto;  /* Add scroll if content exceeds max-height */
-}
+/* Removed to allow dropdown to expand to full content height as per recent requirement */
+/* #language-dropdown {
+    max-height: 300px;
+    overflow-y: auto;
+} */
 
 /* Ensure images within the language switcher do not exceed their container's dimensions
    and maintain aspect ratio, specifically for the small logos.

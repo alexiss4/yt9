@@ -1,6 +1,7 @@
 <?php
 // languages/sw.php
 $lang = [
-    'lang_flag_emoji' => '🇰🇪'
+    'lang_code' => 'sw',
+    'lang_flag_image' => 'assets/images/flags/sw.png',
 ];
 ?>
